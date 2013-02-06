@@ -1,0 +1,16 @@
+
+
+void DisplayModule::SetTemperature(short temperature) {
+  Debug(" SET_TEMP: ");
+  DebugLn(temperature);
+  Wire.beginTransmission(display_address);
+  Wire.write(SET_TEMP);
+  delay(1);
+  byte* bPtr = (byte*)&temperature;
+  for(int i = 0; i < sizeof(short); i++) {
+    Wire.write(bPtr[i]);
+    delay(1);
+  }
+  byte et = Wire.endTransmission();
+}
+
