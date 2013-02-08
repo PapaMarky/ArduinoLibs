@@ -4,8 +4,9 @@
 namespace mdlib {
   class MultiColorLED {
   public:
-    MultiColorLED(int red_pin, int green_pin, int blue_pin);
+    MultiColorLED();
 
+    void set_pins(int red_pin, int green_pin, int blue_pin);
     void set_color(uint32_t color);
 
   private:

@@ -7,8 +7,10 @@
 
 class BoozeSensor {
  public:
-  BoozeSensor(int control_pin, int data_pin, int temperature_pin);
+  BoozeSensor();
 
+  void set_pins(int control, int data, int temperature);
+  
   void turnOn() { control_.turnOn(); }
   void turnOff() { control_.turnOff(); }
 
@@ -25,7 +27,9 @@ class BoozeSensor {
   }
 
   void setup() {
+    control_.setup();
     data_.setup();
+    thermistor_.setup();
   }
  private:
   mdlib::DigitalOutput control_;
@@ -54,18 +58,22 @@ class BoozeSensor {
 
 class Booze_O_Meter {
  public:
-  Booze_O_Meter(int fan_pin,
-		int i2c_jumper_pin,
-		int disp_rx_pin,
-		int disp_tx_pin,
-		int main_button_pin,
-		int up_button_pin,
-		int down_button_pin,
-		int sensor_control_pin,
-		int sensor_data_pin,
-		int sensor_temperature_pin);
+  // constructor from 3rd party lib SoftwareSerial used for display_
+  // requires the pins in the ctor, so we have to pass them along from
+  // ours.
+  Booze_O_Meter(int display_rx, int display_tx);
 
   ~Booze_O_Meter();
+
+  void set_fan_pin(int pin) { fan_.set_pin(pin); }
+  void set_main_button_pin(int pin) { main_button_.set_pin(pin); }
+  void set_up_down_button_pins(int up, int down) {
+    up_button_.set_pin(up);
+    down_button_.set_pin(down);
+  }
+  void set_booze_sensor_pins(int control, int data, int temperature) {
+    sensor_.set_pins(control, data, temperature);
+  }
 
   bool isStandalone() { return standalone_; }
 

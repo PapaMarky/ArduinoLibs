@@ -3,34 +3,22 @@
 ////////////////////////////////////////////////////////////
 // BoozeSensor
 ////////////////////////////////////////////////////////////
-BoozeSensor::BoozeSensor(int control_pin, int data_pin, int temperature_pin)
-  : control_(control_pin),
-    data_(data_pin),
-    thermistor_(temperature_pin)
+BoozeSensor::BoozeSensor()
 {
-  control_.turnOff();
+}
+
+void BoozeSensor::set_pins(int control, int data, int temperature) {
+  control_.set_pin(control);
+  data_.set_pin(data);
+  thermistor_.set_pin(temperature);
 }
 
 ////////////////////////////////////////////////////////////
 // Booze_O_Meter
 ////////////////////////////////////////////////////////////
-Booze_O_Meter::Booze_O_Meter(int fan_pin,
-			     int i2c_jumper_pin,
-			     int disp_rx_pin, int disp_tx_pin,
-			     int main_button_pin,
-			     int up_button_pin,
-			     int down_button_pin,
-			     int sensor_control_pin,
-			     int sensor_data_pin,
-			     int sensor_temperature_pin)
+Booze_O_Meter::Booze_O_Meter(int display_rx, int display_tx)
   : standalone_(true),
-    fan_(fan_pin),
-    i2c_jumper_(i2c_jumper_pin),
-    display_(disp_rx_pin, disp_tx_pin),
-    main_button_(main_button_pin),
-    up_button_(up_button_pin),
-    down_button_(down_button_pin),
-    sensor_(sensor_control_pin, sensor_data_pin, sensor_temperature_pin),
+    display_(display_tx, display_rx),
     state_(POWER_ON)
 {
 }
