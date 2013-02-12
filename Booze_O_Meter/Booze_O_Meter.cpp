@@ -32,8 +32,8 @@ void Booze_O_Meter::setup() {
 
   button_states_[0] = button_states_[1] = button_states_[2] = false;
   display_.begin(9600);
-  display_.write('v'); // clear the display
-  
+  delay(10);
+  display_.write("v"); // 0x76); // clear
 }
 
 void Booze_O_Meter::loop() {
@@ -54,7 +54,6 @@ void Booze_O_Meter::power_on_loop() {
 }
 
 void Booze_O_Meter::calibration_loop() {
-  static int count = 0;
   bool changed = false;
 
   static bool showData = true; // otherwise show temperature
@@ -69,7 +68,6 @@ void Booze_O_Meter::calibration_loop() {
     button_states_[0] = main_button_.isPressed();
     if (!main_button_.isPressed()) {
       changed = true;
-      count = 0;
 
       if (sensor_.isOn())
 	sensor_.turnOff();
@@ -82,7 +80,6 @@ void Booze_O_Meter::calibration_loop() {
     button_states_[1] = up_button_.isPressed();
     if (!up_button_.isPressed()) {
       changed = true;
-      count++;
     }
   }
 
@@ -91,7 +88,6 @@ void Booze_O_Meter::calibration_loop() {
     if (!down_button_.isPressed()) {
       changed = true;
       showData = !showData;
-      count--;
     }
   }
 
@@ -100,10 +96,10 @@ void Booze_O_Meter::calibration_loop() {
   
   display_.write(0x76); // clear
 
-  int value = count;
+  int value = -1;
   if (sensor_.isOn()) {
     if (showData) 
-      value = sensor_.read();
+      value = sensor_.read() * -1;
     else
       value = sensor_.getTemperature();
   }
@@ -111,8 +107,11 @@ void Booze_O_Meter::calibration_loop() {
     display_.write(" OFF");
     return;
   }
-  if (value > 9999)
+
+  if (value > 9999) {
     display_.write("Err");
+    return;
+  }
   else {
     char data[5];
     itoa(value, data, 10);
