@@ -2,6 +2,7 @@
 #define BOOZE_O_METER_H__
 
 #include "../base/base.h"
+#include "MultiColorLED.h"
 
 #include <SoftwareSerial.h>
 
@@ -75,6 +76,10 @@ class Booze_O_Meter {
     sensor_.set_pins(control, data, temperature);
   }
 
+  void set_rgb_led_pins(int red_pin, int blue_pin, int green_pin) {
+    rgb_led_.set_pins(red_pin, blue_pin, green_pin);
+  }
+
   bool isStandalone() { return standalone_; }
 
   void setup();
@@ -93,6 +98,8 @@ class Booze_O_Meter {
   mdlib::MomentaryButton main_button_;
   mdlib::MomentaryButton up_button_;
   mdlib::MomentaryButton down_button_;
+  mdlib::MultiColorLED rgb_led_;
+
   bool button_states_[3];
   BoozeSensor sensor_;
   

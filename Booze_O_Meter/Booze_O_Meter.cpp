@@ -34,6 +34,9 @@ void Booze_O_Meter::setup() {
   display_.begin(9600);
   delay(10);
   display_.write("v"); // 0x76); // clear
+
+  rgb_led_.setup();
+  rgb_led_.set_color(mdlib::BLACK);
 }
 
 void Booze_O_Meter::loop() {
@@ -114,7 +117,7 @@ void Booze_O_Meter::calibration_loop() {
   }
   else {
     char data[5];
-    itoa(value, data, 10);
+    sprintf(data, "%4d", value);
   
     int len = strlen(data);
 
