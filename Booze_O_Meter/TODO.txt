@@ -1,0 +1,24 @@
+--- hardware --
+A Sensor assembly
+A Sensor base
+Base Assembly
+
+--- physical ---
+fan hole
+connect hose
+
+
+--- software ---
+Queue
+EventQueue
+
+Thermistor
+
+
+--- Events ---
+Timer
+ButtonUp
+ButtonDown
+ButtonClick
+ButtonDoubleClick
+ButtonHold
