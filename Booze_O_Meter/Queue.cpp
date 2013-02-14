@@ -31,7 +31,7 @@ namespace mdlib {
 	  for (int i = front_; i < size_; i++) 
 	    d[n++] = data_[i];
 
-	  for (i = 0; i < back_; i++)
+	  for (int i = 0; i < back_; i++)
 	    d[n++] = data_[i];
 	}
       }
