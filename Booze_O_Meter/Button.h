@@ -1,5 +1,8 @@
+// Copyright (c) 2013 Mark Dyer. All rights reserved.
 #ifndef BUTTON_H
 #define BUTTON_H
+
+#include "../base/base.h"
 
 namespace mdlib {
 
@@ -16,34 +19,17 @@ namespace mdlib {
   // 
   class Button : public DigitalInput {
   public:
-  Button() : is_pressed_(false) {}
+    enum State { UP, DOWN };
 
-    virtual void update() {
-      is_pressed_ = debounce();
-    }
+    Button();
 
-    bool isPressed() {return is_pressed_;}
+    virtual void update();
+    bool isPressed() { return state_ == DOWN; }
 
   private:
-    bool is_pressed_;
-    bool debounce() {
-      const int debounceDelay = 10;
-      bool state;
-      bool previousState;
-      previousState = getState();
-    
-      for (int counter = 0; counter < debounceDelay; counter++) {
-	delay(1);
-	state = getState();
-	if (state != previousState) {
-	  counter = 0;
-	  previousState = state;
-	}
-      }
-    
-      return (state == HIGH);
-    }
+    State state_;
+    State previous_state_;
+    State debounce();
   };
 }
-
 #endif // BUTTON_H
