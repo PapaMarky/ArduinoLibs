@@ -108,6 +108,8 @@ class Booze_O_Meter {
   State state_;
 
   // loop functions for each State
+  void HandleEvents();
+
   void power_on_loop();
   void calibration_loop();
 };

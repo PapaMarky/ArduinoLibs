@@ -1,6 +1,7 @@
 // Copyright (c) 2013 Mark Dyer. All rights reserved.
 
 #include "Button.h"
+#include "EventQueue.h"
 
 namespace mdlib {
   Button::Button() : state_(UP), previous_state_(UP) {}
@@ -24,10 +25,13 @@ namespace mdlib {
       }
     }
 
+    state_ = state ? UP : DOWN;
+    
     if (state_ != previous_state_) {
-	
+      PostEvent(Event(state_ == HIGH ? Event::BUTTON_UP : Event::BUTTON_DOWN, (int)this));
+      previous_state_ = state_;
     }
     
-    return (state == HIGH ? UP : DOWN);
+    return (state_ == HIGH ? UP : DOWN);
   }
 }

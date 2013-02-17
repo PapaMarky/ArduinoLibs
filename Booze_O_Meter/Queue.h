@@ -14,7 +14,7 @@ namespace mdlib {
     ~Queue(){};
 
     int capacity() const { return capacity_; }
-    int lenth() const { return lenth_; }
+    int length() const { return length_; }
     
     void AddToBack(T item) {
       int n = back_;
@@ -24,16 +24,16 @@ namespace mdlib {
       data_[n] = item;
       back_ = n + 1;
 
-      if (lenth_ < capacity_)
-	lenth_++;
+      if (length_ < capacity_)
+	length_++;
     }
 
     T TakeFromFront() {
       T item;
-      if (lenth() > 0) {
+      if (length() > 0) {
 	item = data_[front_];
 	front_++;
-	lenth_--;
+	length_--;
       }
       return item;
     }
@@ -41,7 +41,7 @@ namespace mdlib {
   private:
     T* data_;
     int capacity_;
-    int lenth_;
+    int length_;
     
     int front_;
     int back_;

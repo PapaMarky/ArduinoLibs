@@ -1,3 +1,4 @@
+#include "Arduino.h"
 #include "EventQueue.h"
 #include "Queue.h"
 
@@ -7,11 +8,24 @@ namespace mdlib {
   
   static Queue<Event> EventQueue(EVENT_Q_DATA, EVENT_QUEUE_LENGTH);
 
+  int CountEvents() {
+    return EventQueue.length();
+  }
+  
   void PostEvent(Event e) {
+    Serial.print("--POST: e: ");
+    Serial.print(e.event_type);
+    Serial.print(", id: ");
+    Serial.println(e.source_id);
     EventQueue.AddToBack(e);
   }
 
   Event HandleEvent() {
-    return EventQueue.TakeFromFront();
+    Event e = EventQueue.TakeFromFront();
+    Serial.print("HANDLE: e: ");
+    Serial.print(e.event_type);
+    Serial.print(", id: ");
+    Serial.println(e.source_id);
+    return e;
   }
 }

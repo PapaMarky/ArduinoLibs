@@ -1,4 +1,5 @@
 #include "Booze_O_Meter.h"
+#include "EventQueue.h"
 
 ////////////////////////////////////////////////////////////
 // BoozeSensor
@@ -39,7 +40,23 @@ void Booze_O_Meter::setup() {
   rgb_led_.set_color(mdlib::BLACK);
 }
 
+void Booze_O_Meter::HandleEvents() {
+  while (mdlib::CountEvents() > 0) {
+    mdlib::Event e = mdlib::HandleEvent();
+
+    switch (e.event_type) {
+    case mdlib::Event::BUTTON_UP:
+      break;
+    case mdlib::Event::BUTTON_DOWN:
+      break;
+    }
+  }
+}
+
 void Booze_O_Meter::loop() {
+  // Manage Events
+  HandleEvents();
+  
   switch(state_) {
   case POWER_ON:
     power_on_loop();
