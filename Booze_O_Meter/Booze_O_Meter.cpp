@@ -13,6 +13,22 @@ void BoozeSensor::set_pins(int control, int data, int temperature) {
   thermistor_.set_pin(temperature);
 }
 
+
+// observed values
+const float alcohol_sensor_zero = 200;
+const float alcohol_sensor_100 = 900;
+
+float BoozeSensor::CalculateAlcoholPercent() {
+  float sensor_value = (float)data_.read();
+
+  if (sensor_value <= alcohol_sensor_zero)
+    return 0.0;
+
+  if (sensor_value >= alcohol_sensor_100)
+    return 100.0;
+
+  return (sensor_value - alcohol_sensor_zero) / (alcohol_sensor_100 - alcohol_sensor_zero);
+}
 ////////////////////////////////////////////////////////////
 // Booze_O_Meter
 ////////////////////////////////////////////////////////////
@@ -82,6 +98,7 @@ void Booze_O_Meter::power_on_loop() {
   }
 }
 
+
 void Booze_O_Meter::calibration_loop() {
   bool changed = false;
 
@@ -128,7 +145,7 @@ void Booze_O_Meter::calibration_loop() {
   int value = -1;
   if (sensor_.isOn()) {
     if (showData) 
-      value = sensor_.read() * -1;
+      value = sensor_.CalculateAlcoholPercent();
     else
       value = sensor_.getTemperature();
   }

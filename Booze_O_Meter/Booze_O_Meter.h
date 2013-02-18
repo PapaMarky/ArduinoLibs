@@ -32,10 +32,13 @@ class BoozeSensor {
     data_.setup();
     thermistor_.setup();
   }
+
+  float CalculateAlcoholPercent();
+  
  private:
   mdlib::DigitalOutput control_;
   mdlib::AnalogInput data_;
-  mdlib::AnalogInput thermistor_;
+  mdlib::AnalogInput thermistor_;  
 };
 
 /**
