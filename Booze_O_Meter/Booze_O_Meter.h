@@ -91,7 +91,7 @@ class Booze_O_Meter {
     POWER_ON,
     CALIBRATION,
   };
-
+  
   mdlib::DigitalOutput fan_;
   mdlib::DigitalInput i2c_jumper_;
   SoftwareSerial display_;
@@ -103,7 +103,13 @@ class Booze_O_Meter {
   bool button_states_[3];
   BoozeSensor sensor_;
   
+
+  void set_state(State state) {
+    state_ = state;
+    state_start_millis_ = millis();
+  }
   State state_;
+  unsigned long state_start_millis_;
 
   // loop functions for each State
   void power_on_loop();

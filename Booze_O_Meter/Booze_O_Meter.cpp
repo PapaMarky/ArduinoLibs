@@ -31,12 +31,17 @@ void Booze_O_Meter::setup() {
   sensor_.setup();
 
   button_states_[0] = button_states_[1] = button_states_[2] = false;
+
   display_.begin(9600);
   delay(10);
   display_.write("v"); // 0x76); // clear
+  display_.write(" OFF");
 
   rgb_led_.setup();
   rgb_led_.set_color(mdlib::BLACK);
+
+  set_state(POWER_ON);
+  
 }
 
 void Booze_O_Meter::loop() {
@@ -52,8 +57,29 @@ void Booze_O_Meter::loop() {
 
 void Booze_O_Meter::power_on_loop() {
   standalone_ = i2c_jumper_.getState();
-  state_ = CALIBRATION;
-  display_.write(" OFF");
+
+  unsigned long elapsed = millis() - state_start_millis_;
+
+  if (elapsed >= 1000) {
+    set_state(CALIBRATION);
+    return;
+  }
+
+  if (elapsed < 1000/6) {
+    rgb_led_.set_color(mdlib::PURPLE);
+  }
+  else if (elapsed < 2000/6) {
+    rgb_led_.set_color(mdlib::RED);
+  }
+  else if (elapsed < 3000/6) {
+    rgb_led_.set_color(mdlib::YELLOW);
+  }
+  else if (elapsed < 4000/6) {
+    rgb_led_.set_color(mdlib::GREEN);
+  }
+  else if (elapsed < 5000/6) {
+    rgb_led_.set_color(mdlib::BLUE);
+  }
 }
 
 void Booze_O_Meter::calibration_loop() {
