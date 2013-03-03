@@ -1,8 +1,10 @@
+// Copyright (c) 2013 Mark Dyer. All rights reserved.
 #ifndef BOOZE_O_METER_H__
 #define BOOZE_O_METER_H__
 
 #include "../base/base.h"
 #include "MultiColorLED.h"
+#include "Button.h"
 
 #include <SoftwareSerial.h>
 
@@ -97,9 +99,9 @@ class Booze_O_Meter {
   mdlib::DigitalOutput fan_;
   mdlib::DigitalInput i2c_jumper_;
   SoftwareSerial display_;
-  mdlib::MomentaryButton main_button_;
-  mdlib::MomentaryButton up_button_;
-  mdlib::MomentaryButton down_button_;
+  mdlib::Button main_button_;
+  mdlib::Button up_button_;
+  mdlib::Button down_button_;
   mdlib::MultiColorLED rgb_led_;
 
   bool button_states_[3];
@@ -114,6 +116,8 @@ class Booze_O_Meter {
   unsigned long state_start_millis_;
 
   // loop functions for each State
+  void HandleEvents();
+
   void power_on_loop();
   void calibration_loop();
 };

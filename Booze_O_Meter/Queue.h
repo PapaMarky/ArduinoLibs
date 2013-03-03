@@ -4,23 +4,45 @@
 #define MDLIB_QUEUE_H
 
 namespace mdlib {
+
+  // Arduino friendly queue class
   template<class T>
     class Queue {
   public:
-    Queue();
-    ~Queue();
-    
-    void set_size(int size);
-    void AddToBack(T* item);
-    T* TakeFromFront();
 
-    int count();
+    Queue(T* data, int capacity): data_(data), capacity_(0), front_(0), back_(0){};
+    ~Queue(){};
+
+    int capacity() const { return capacity_; }
+    int length() const { return length_; }
+    
+    void AddToBack(T item) {
+      int n = back_;
+      if (n == capacity_)
+	n = 0;
+
+      data_[n] = item;
+      back_ = n + 1;
+
+      if (length_ < capacity_)
+	length_++;
+    }
+
+    T TakeFromFront() {
+      T item;
+      if (length() > 0) {
+	item = data_[front_];
+	front_++;
+	length_--;
+      }
+      return item;
+    }
     
   private:
-    void Grow();
-
-    T** data_;
-    int size_;
+    T* data_;
+    int capacity_;
+    int length_;
+    
     int front_;
     int back_;
   };
