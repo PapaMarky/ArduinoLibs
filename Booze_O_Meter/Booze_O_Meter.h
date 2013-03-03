@@ -19,9 +19,7 @@ class BoozeSensor {
   
   void set_state(bool b) { control_.set_state(b); }
 
-  int getTemperature() {
-    return thermistor_.read();
-  }
+  int getTemperature();
   
   int read() {
     return data_.read();
@@ -34,6 +32,7 @@ class BoozeSensor {
   }
 
   float CalculateAlcoholPercent();
+  int RawAlcoholValue() { return data_.read(); }
   
  private:
   mdlib::DigitalOutput control_;

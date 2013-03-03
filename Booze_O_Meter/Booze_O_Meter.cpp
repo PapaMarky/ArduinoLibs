@@ -13,10 +13,24 @@ void BoozeSensor::set_pins(int control, int data, int temperature) {
   thermistor_.set_pin(temperature);
 }
 
+int BoozeSensor::getTemperature() {
+  int raw = thermistor_.read();
+
+  float pad = 9850;
+  
+  float Temp;  // Dual-Purpose variable to save space.
+
+  long Resistance=((1024 * pad / raw) - pad); 
+  Temp = log(Resistance); // Saving the Log(resistance) so not to calculate  it 4 times later
+  Temp = 1 / (0.001129148 + (0.000234125 * Temp) + (0.0000000876741 * Temp * Temp * Temp));
+  Temp = Temp - 273.15;  // Convert Kelvin to Celsius                      
+  //temp = (Temp * 9.0)/ 5.0 + 32.0;                  // Convert to Fahrenheit
+  return (int)(Temp * 10.0);                                      // Return the Temperature
+}
 
 // observed values
-const float alcohol_sensor_zero = 200;
-const float alcohol_sensor_100 = 900;
+const float alcohol_sensor_zero = 300;
+const float alcohol_sensor_100 = 1023;
 
 float BoozeSensor::CalculateAlcoholPercent() {
   float sensor_value = (float)data_.read();
@@ -27,7 +41,7 @@ float BoozeSensor::CalculateAlcoholPercent() {
   if (sensor_value >= alcohol_sensor_100)
     return 100.0;
 
-  return (sensor_value - alcohol_sensor_zero) / (alcohol_sensor_100 - alcohol_sensor_zero);
+  return ((sensor_value - alcohol_sensor_zero) / (alcohol_sensor_100 - alcohol_sensor_zero)) * 100.0;
 }
 ////////////////////////////////////////////////////////////
 // Booze_O_Meter
@@ -50,8 +64,8 @@ void Booze_O_Meter::setup() {
 
   display_.begin(9600);
   delay(10);
-  display_.write("v"); // 0x76); // clear
-  display_.write(" OFF");
+  display_.write('v'); // 0x76); // clear
+  display_.write('w'); display_.write((uint8_t)0x00);
 
   rgb_led_.setup();
   rgb_led_.set_color(mdlib::BLACK);
@@ -77,6 +91,7 @@ void Booze_O_Meter::power_on_loop() {
   unsigned long elapsed = millis() - state_start_millis_;
 
   if (elapsed >= 1000) {
+    display_.write(" OFF");
     set_state(CALIBRATION);
     return;
   }
@@ -140,17 +155,70 @@ void Booze_O_Meter::calibration_loop() {
   if (!changed && ! sensor_.isOn())
     return;
   
-  display_.write(0x76); // clear
+  display_.write('v'); // clear
+  display_.write('w'); display_.write((uint8_t)0x00);
 
   int value = -1;
+  char data[50];
+  unsigned long elapsed = millis() - state_start_millis_;
+
+  static int status = 0;
+
+  float status0_limit = (status > 0) ? 0.0 : 5.0;
+  float status1_limit = (status > 1) ? 20.0 : 25.0;
+  float status2_limit = (status > 2) ? 85.0 : 95.0;
   if (sensor_.isOn()) {
-    if (showData) 
-      value = sensor_.CalculateAlcoholPercent();
-    else
+    float pct = sensor_.CalculateAlcoholPercent();
+    if (pct <= status0_limit) {
+      rgb_led_.set_color(0x000a0a0a);
+      status = 0;
+    }
+    else if (pct <= status1_limit) {
+      rgb_led_.set_color(mdlib::GREEN);
+      status = 1;
+    }
+    else if (pct <= status2_limit) {
+      rgb_led_.set_color(mdlib::YELLOW);
+      status = 2;
+    }
+    else {
+      rgb_led_.set_color(mdlib::RED);
+      status = 3;
+    }
+      
+    if (showData) {
+      bool showPct = true; // (elapsed/1000) % 2;
+
+      if (showPct) {
+	value = (int)(pct * 10.0);
+	if (value == 0) {
+	  sprintf(data, "  00");
+	}
+	else {
+	  sprintf(data, "%4d", value);
+	}
+	display_.write(data);
+	display_.write('w');
+	display_.write(0x4);
+      }
+      else {
+	value = sensor_.RawAlcoholValue();
+	sprintf(data, "%4d", value);
+	display_.write(data);
+      }
+      return;
+    }
+    else {
       value = sensor_.getTemperature();
+      sprintf(data, "%3dC", value);
+      display_.write(data);
+      display_.write('w');
+      display_.write(0x2);
+    }
   }
   else {
     display_.write(" OFF");
+    rgb_led_.set_color(mdlib::BLUE);
     return;
   }
 
@@ -159,8 +227,6 @@ void Booze_O_Meter::calibration_loop() {
     return;
   }
   else {
-    char data[5];
-    sprintf(data, "%4d", value);
   
     int len = strlen(data);
 
