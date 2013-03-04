@@ -84,6 +84,12 @@ void Booze_O_Meter::HandleEvents() {
       break;
     case mdlib::Event::BUTTON_DOWN:
       break;
+    case mdlib::Event::BUTTON_LONG_CLICK:
+      Serial.println("BUTTON_LONG_CLICK");
+      break;
+    case mdlib::Event::BUTTON_DOUBLE_CLICK:
+      Serial.println("BUTTON_DOUBLE_CLICK");
+      break;
     }
   }
 }

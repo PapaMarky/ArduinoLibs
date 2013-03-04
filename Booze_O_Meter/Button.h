@@ -27,9 +27,21 @@ namespace mdlib {
     bool isPressed() { return state_ == DOWN; }
 
   private:
+    enum ClickState {
+      IDLE,
+      IN_CLICK,
+      LONG_CLICK,
+      MAYBE_DOUBLE,
+      DOUBLE_CLICK
+    };
+    
     State state_;
     State previous_state_;
+    ClickState click_state_;
     State debounce();
+
+    unsigned long last_up_;
+    unsigned long last_down_;
   };
 }
 #endif // BUTTON_H
