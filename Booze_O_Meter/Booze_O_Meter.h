@@ -6,34 +6,13 @@
 #include "MultiColorLED.h"
 #include "Button.h"
 #include "StateMachine.h"
+#include "StateContext.h"
+
 #include "BoozeSensor.h"
 
 #include <SoftwareSerial.h>
 
 namespace BOM {
-
-class StateContext {
- public:
-  StateContext(int display_rx, int display_tx) : display_(display_rx, display_tx)
-  {
-  }
-  mdlib::DigitalOutput* fan() {return &fan_;}
-  SoftwareSerial* display() {return &display_;}
-  mdlib::MultiColorLED* led() {return &rgb_led_;}
-  BoozeSensor* sensor() {return &sensor_;}
-
- private:
-  // context items (things the states need to manipulate)
-  // buttons do not belong here, because they generate events
-  // that are handled by the States' handle_event(...) overloads
-  
-  // TODO all of these should be BOM specific wrapper classes.
-  // Maybe not fan_, but certainly the others
-  mdlib::DigitalOutput fan_;
-  SoftwareSerial display_;
-  mdlib::MultiColorLED rgb_led_;
-  BoozeSensor sensor_;
-};
 
 /**
  * The internal representation of the booze_o_meter.
@@ -59,23 +38,16 @@ class Booze_O_Meter {
   // constructor from 3rd party lib SoftwareSerial used for display_
   // requires the pins in the ctor, so we have to pass them along from
   // ours.
-  Booze_O_Meter(int display_rx, int display_tx);
+  Booze_O_Meter();
 
   ~Booze_O_Meter();
 
-  void set_fan_pin(int pin) { context_.fan()->set_pin(pin); }
   void set_main_button_pin(int pin) { main_button_.set_pin(pin); }
   void set_up_down_button_pins(int up, int down) {
     up_button_.set_pin(up);
     down_button_.set_pin(down);
   }
-  void set_booze_sensor_pins(int control, int data, int temperature) {
-    context_.sensor()->set_pins(control, data, temperature);
-  }
-
-  void set_rgb_led_pins(int red_pin, int blue_pin, int green_pin) {
-    context_.led()->set_pins(red_pin, blue_pin, green_pin);
-  }
+  void set_context(StateContext* context) { context_ = context; }
 
   bool isStandalone() { return standalone_; }
 
@@ -94,7 +66,7 @@ class Booze_O_Meter {
   static SleepState SLEEP;
   static PowerSaverState POWER_SAVER;
 
-  StateContext context_;
+  StateContext* context_;
 
   mdlib::DigitalInput i2c_jumper_;
   mdlib::Button main_button_;
@@ -102,7 +74,6 @@ class Booze_O_Meter {
   mdlib::Button down_button_;
 
   bool button_states_[3];
-  
 
   void set_state(State* state) {
     state_ = state;
