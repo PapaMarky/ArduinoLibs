@@ -2,6 +2,8 @@
 #ifndef BOOZE_SENSOR__
 #define BOOZE_SENSOR__
 
+#include "../base/base.h"
+
 namespace BOM {
 class BoozeSensor {
  public:
