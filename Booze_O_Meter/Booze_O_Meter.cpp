@@ -1,9 +1,21 @@
 #include "Booze_O_Meter.h"
+#include "StateMachine.h"
 #include "EventQueue.h"
-
 ////////////////////////////////////////////////////////////
 // BoozeSensor
 ////////////////////////////////////////////////////////////
+
+namespace BOM {
+
+StartUpState Booze_O_Meter::START_UP;
+WarmUpState Booze_O_Meter::WARM_UP;
+ReadyState Booze_O_Meter::READY;
+SamplingState Booze_O_Meter::SAMPLING;
+PostSampleState Booze_O_Meter::POST_SAMPLE;
+PostSample2State Booze_O_Meter::POST_SAMPLE2;
+SleepState Booze_O_Meter::SLEEP;
+PowerSaverState Booze_O_Meter::POWER_SAVER;
+
 BoozeSensor::BoozeSensor()
 {
 }
@@ -49,29 +61,53 @@ float BoozeSensor::CalculateAlcoholPercent() {
 ////////////////////////////////////////////////////////////
 Booze_O_Meter::Booze_O_Meter(int display_rx, int display_tx)
   : standalone_(true),
-    display_(display_tx, display_rx),
-    state_(POWER_ON)
+    context_(display_tx, display_rx)
 {
+  // set up the states
+  // - set each one's next_state and timeout_next_state
+  START_UP.set_next_state(&WARM_UP);
+  START_UP.set_timeout_next_state(&WARM_UP);
+
+  WARM_UP.set_next_state(&READY);
+  WARM_UP.set_timeout_next_state(&READY);
+  
+  READY.set_next_state(&SAMPLING);
+  READY.set_timeout_next_state(&POWER_SAVER);
+
+  SAMPLING.set_next_state(&POST_SAMPLE);
+  SAMPLING.set_timeout_next_state(&POST_SAMPLE);
+
+  POST_SAMPLE.set_next_state(&WARM_UP);
+  POST_SAMPLE.set_timeout_next_state(&POST_SAMPLE2);
+
+  POST_SAMPLE2.set_next_state(&WARM_UP);
+  POST_SAMPLE2.set_timeout_next_state(&WARM_UP);
+
+  SLEEP.set_next_state(&WARM_UP);
+  SLEEP.set_timeout_next_state(&WARM_UP);
+
+  POWER_SAVER.set_next_state(&SAMPLING);
+  POWER_SAVER.set_timeout_next_state(&SLEEP);
 }
 
 Booze_O_Meter::~Booze_O_Meter() {}
 
 void Booze_O_Meter::setup() {
   Serial.println('Booze_O_Meter setup');
-  fan_.setup();
-  sensor_.setup();
+  context_.fan()->setup();
+  context_.sensor()->setup();
 
   button_states_[0] = button_states_[1] = button_states_[2] = false;
 
-  display_.begin(9600);
+  context_.display()->begin(9600);
   delay(10);
-  display_.write('v'); // 0x76); // clear
-  display_.write('w'); display_.write((uint8_t)0x00);
+  context_.display()->write('v'); // 0x76); // clear
+  context_.display()->write('w'); context_.display()->write((uint8_t)0x00);
 
-  rgb_led_.setup();
-  rgb_led_.set_color(mdlib::BLACK);
+  context_.led()->setup();
+  context_.led()->set_color(mdlib::BLACK);
 
-  set_state(POWER_ON);
+  set_state(&START_UP);
   
 }
 
@@ -97,42 +133,38 @@ void Booze_O_Meter::HandleEvents() {
 void Booze_O_Meter::loop() {
   // Manage Events
   HandleEvents();
-  
-  switch(state_) {
-  case POWER_ON:
-    power_on_loop();
-    break;
-  case CALIBRATION:
-    calibration_loop();
-    break;
+
+  State* next_state = state_->loop();
+  if (next_state) {
+    set_state(next_state);
   }
 }
-
+  /*
 void Booze_O_Meter::power_on_loop() {
   standalone_ = i2c_jumper_.getState();
 
   unsigned long elapsed = millis() - state_start_millis_;
 
   if (elapsed >= 1000) {
-    display_.write(" OFF");
-    set_state(CALIBRATION);
+    context_.display()->write(" OFF");
+    set_state(SETUP);
     return;
   }
 
   if (elapsed < 1000/6) {
-    rgb_led_.set_color(mdlib::PURPLE);
+    context_.led()->set_color(mdlib::PURPLE);
   }
   else if (elapsed < 2000/6) {
-    rgb_led_.set_color(mdlib::RED);
+    context_.led()->set_color(mdlib::RED);
   }
   else if (elapsed < 3000/6) {
-    rgb_led_.set_color(mdlib::YELLOW);
+    context_.led()->set_color(mdlib::YELLOW);
   }
   else if (elapsed < 4000/6) {
-    rgb_led_.set_color(mdlib::GREEN);
+    context_.led()->set_color(mdlib::GREEN);
   }
   else if (elapsed < 5000/6) {
-    rgb_led_.set_color(mdlib::BLUE);
+    context_.led()->set_color(mdlib::BLUE);
   }
 }
 
@@ -146,17 +178,17 @@ void Booze_O_Meter::calibration_loop() {
   up_button_.update();
   down_button_.update();
 
-  fan_.set_state(up_button_.isPressed());
+  context_.fan()->set_state(up_button_.isPressed());
 
   if (main_button_.isPressed() != button_states_[0]) {
     button_states_[0] = main_button_.isPressed();
     if (!main_button_.isPressed()) {
       changed = true;
 
-      if (sensor_.isOn())
-	sensor_.turnOff();
+      if (context_.sensor()->isOn())
+	context_.sensor()->turnOff();
       else
-	sensor_.turnOn();
+	context_.sensor()->turnOn();
     }
   }
 
@@ -175,11 +207,11 @@ void Booze_O_Meter::calibration_loop() {
     }
   }
 
-  if (!changed && ! sensor_.isOn())
+  if (!changed && ! context_.sensor()->isOn())
     return;
   
-  display_.write('v'); // clear
-  display_.write('w'); display_.write((uint8_t)0x00);
+  context_.display()->write('v'); // clear
+  context_.display()->write('w'); context_.display()->write((uint8_t)0x00);
 
   int value = -1;
   char data[50];
@@ -190,22 +222,22 @@ void Booze_O_Meter::calibration_loop() {
   float status0_limit = (status > 0) ? 0.0 : 5.0;
   float status1_limit = (status > 1) ? 20.0 : 25.0;
   float status2_limit = (status > 2) ? 85.0 : 95.0;
-  if (sensor_.isOn()) {
-    float pct = sensor_.CalculateAlcoholPercent();
+  if (context_.sensor()->isOn()) {
+    float pct = context_.sensor()->CalculateAlcoholPercent();
     if (pct <= status0_limit) {
-      rgb_led_.set_color(0x000a0a0a);
+      context_.led()->set_color(0x000a0a0a);
       status = 0;
     }
     else if (pct <= status1_limit) {
-      rgb_led_.set_color(mdlib::GREEN);
+      context_.led()->set_color(mdlib::GREEN);
       status = 1;
     }
     else if (pct <= status2_limit) {
-      rgb_led_.set_color(mdlib::YELLOW);
+      context_.led()->set_color(mdlib::YELLOW);
       status = 2;
     }
     else {
-      rgb_led_.set_color(mdlib::RED);
+      context_.led()->set_color(mdlib::RED);
       status = 3;
     }
       
@@ -220,43 +252,45 @@ void Booze_O_Meter::calibration_loop() {
 	else {
 	  sprintf(data, "%4d", value);
 	}
-	display_.write(data);
-	display_.write('w');
-	display_.write(0x4);
+	context_.display()->write(data);
+	context_.display()->write('w');
+	context_.display()->write(0x4);
       }
       else {
-	value = sensor_.RawAlcoholValue();
+	value = context_.sensor()->RawAlcoholValue();
 	sprintf(data, "%4d", value);
-	display_.write(data);
+	context_.display()->write(data);
       }
       return;
     }
     else {
-      value = sensor_.getTemperature();
+      value = context_.sensor()->getTemperature();
       sprintf(data, "%3dC", value);
-      display_.write(data);
-      display_.write('w');
-      display_.write(0x2);
+      context_.display()->write(data);
+      context_.display()->write('w');
+      context_.display()->write(0x2);
     }
   }
   else {
-    display_.write(" OFF");
-    rgb_led_.set_color(mdlib::BLUE);
+    context_.display()->write(" OFF");
+    context_.led()->set_color(mdlib::BLUE);
     return;
   }
 
   if (value > 9999) {
-    display_.write("Err");
+    context_.display()->write("Err");
     return;
   }
   else {
   
     int len = strlen(data);
 
-    if (len < 4) display_.write(' ');
-    if (len < 3) display_.write(' ');
-    if (len < 2) display_.write(' ');
+    if (len < 4) context_.display()->write(' ');
+    if (len < 3) context_.display()->write(' ');
+    if (len < 2) context_.display()->write(' ');
 
-    display_.write(data);
+    context_.display()->write(data);
   }
+}
+  */
 }
