@@ -5,8 +5,11 @@
 #include "../base/base.h"
 #include "MultiColorLED.h"
 #include "Button.h"
+#include "StateMachine.h"
 
 #include <SoftwareSerial.h>
+
+namespace BOM {
 
 class BoozeSensor {
  public:
@@ -42,6 +45,29 @@ class BoozeSensor {
   mdlib::AnalogInput thermistor_;  
 };
 
+class StateContext {
+ public:
+  StateContext(int display_rx, int display_tx) : display_(display_rx, display_tx)
+  {
+  }
+  mdlib::DigitalOutput* fan() {return &fan_;}
+  SoftwareSerial* display() {return &display_;}
+  mdlib::MultiColorLED* led() {return &rgb_led_;}
+  BoozeSensor* sensor() {return &sensor_;}
+
+ private:
+  // context items (things the states need to manipulate)
+  // buttons do not belong here, because they generate events
+  // that are handled by the States' handle_event(...) overloads
+  
+  // TODO all of these should be BOM specific wrapper classes.
+  // Maybe not fan_, but certainly the others
+  mdlib::DigitalOutput fan_;
+  SoftwareSerial display_;
+  mdlib::MultiColorLED rgb_led_;
+  BoozeSensor sensor_;
+};
+
 /**
  * The internal representation of the booze_o_meter.
  *
@@ -70,18 +96,18 @@ class Booze_O_Meter {
 
   ~Booze_O_Meter();
 
-  void set_fan_pin(int pin) { fan_.set_pin(pin); }
+  void set_fan_pin(int pin) { context_.fan()->set_pin(pin); }
   void set_main_button_pin(int pin) { main_button_.set_pin(pin); }
   void set_up_down_button_pins(int up, int down) {
     up_button_.set_pin(up);
     down_button_.set_pin(down);
   }
   void set_booze_sensor_pins(int control, int data, int temperature) {
-    sensor_.set_pins(control, data, temperature);
+    context_.sensor()->set_pins(control, data, temperature);
   }
 
   void set_rgb_led_pins(int red_pin, int blue_pin, int green_pin) {
-    rgb_led_.set_pins(red_pin, blue_pin, green_pin);
+    context_.led()->set_pins(red_pin, blue_pin, green_pin);
   }
 
   bool isStandalone() { return standalone_; }
@@ -91,36 +117,37 @@ class Booze_O_Meter {
 
  private:
   bool standalone_;
-  enum State {
-    POWER_ON,
-    CALIBRATION,
-  };
-  
-  mdlib::DigitalOutput fan_;
+  // concrete state machines
+  static StartUpState START_UP;
+  static WarmUpState WARM_UP;
+  static ReadyState READY;
+  static SamplingState SAMPLING;
+  static PostSampleState POST_SAMPLE;
+  static PostSample2State POST_SAMPLE2;
+  static SleepState SLEEP;
+  static PowerSaverState POWER_SAVER;
+
+  StateContext context_;
+
   mdlib::DigitalInput i2c_jumper_;
-  SoftwareSerial display_;
   mdlib::Button main_button_;
   mdlib::Button up_button_;
   mdlib::Button down_button_;
-  mdlib::MultiColorLED rgb_led_;
 
   bool button_states_[3];
-  BoozeSensor sensor_;
   
 
-  void set_state(State state) {
+  void set_state(State* state) {
     state_ = state;
     state_start_millis_ = millis();
   }
-  State state_;
+  State* state_;
   unsigned long state_start_millis_;
 
   // loop functions for each State
   void HandleEvents();
-
-  void power_on_loop();
-  void calibration_loop();
 };
+}
 
 #endif // BOOZE_O_METER_H__
 
