@@ -6,6 +6,22 @@ BoozeSensor::BoozeSensor()
 {
 }
 
+// observed values
+const float alcohol_sensor_zero = 300;
+const float alcohol_sensor_100 = 1023;
+
+float BoozeSensor::CalculateAlcoholPercent() {
+  float sensor_value = (float)data_.read();
+
+  if (sensor_value <= alcohol_sensor_zero)
+    return 0.0;
+
+  if (sensor_value >= alcohol_sensor_100)
+    return 100.0;
+
+  return ((sensor_value - alcohol_sensor_zero) / (alcohol_sensor_100 - alcohol_sensor_zero)) * 100.0;
+}
+
 void BoozeSensor::set_pins(int control, int data, int temperature) {
   control_.set_pin(control);
   data_.set_pin(data);

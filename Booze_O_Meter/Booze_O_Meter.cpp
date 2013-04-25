@@ -16,22 +16,6 @@ PostSampleState Booze_O_Meter::POST_SAMPLE;
 PostSample2State Booze_O_Meter::POST_SAMPLE2;
 SleepState Booze_O_Meter::SLEEP;
 PowerSaverState Booze_O_Meter::POWER_SAVER;
-
-// observed values
-const float alcohol_sensor_zero = 300;
-const float alcohol_sensor_100 = 1023;
-
-float BoozeSensor::CalculateAlcoholPercent() {
-  float sensor_value = (float)data_.read();
-
-  if (sensor_value <= alcohol_sensor_zero)
-    return 0.0;
-
-  if (sensor_value >= alcohol_sensor_100)
-    return 100.0;
-
-  return ((sensor_value - alcohol_sensor_zero) / (alcohol_sensor_100 - alcohol_sensor_zero)) * 100.0;
-}
 ////////////////////////////////////////////////////////////
 // Booze_O_Meter
 ////////////////////////////////////////////////////////////
