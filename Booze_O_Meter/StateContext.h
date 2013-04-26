@@ -19,10 +19,10 @@ class StateContext {
   void set_rgb_led(mdlib::MultiColorLED* rgb_led) { rgb_led_ = rgb_led; }
   void set_sensor(BoozeSensor* sensor) { sensor_ = sensor; }
 
-  mdlib::DigitalOutput* fan() {return fan_;}
-  SoftwareSerial* display() {return display_;}
-  mdlib::MultiColorLED* led() {return rgb_led_;}
-  BoozeSensor* sensor() {return sensor_;}
+  mdlib::DigitalOutput* fan() const {return fan_;}
+  SoftwareSerial* display() const {return display_;}
+  mdlib::MultiColorLED* led() const {return rgb_led_;}
+  BoozeSensor* sensor() const {return sensor_;}
 
  private:
   // context items (things the states need to manipulate)

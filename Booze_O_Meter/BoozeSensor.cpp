@@ -10,7 +10,7 @@ BoozeSensor::BoozeSensor()
 const float alcohol_sensor_zero = 300;
 const float alcohol_sensor_100 = 1023;
 
-float BoozeSensor::CalculateAlcoholPercent() {
+float BoozeSensor::CalculateAlcoholPercent() const {
   float sensor_value = (float)data_.read();
 
   if (sensor_value <= alcohol_sensor_zero)
@@ -28,7 +28,7 @@ void BoozeSensor::set_pins(int control, int data, int temperature) {
   thermistor_.set_pin(temperature);
 }
 
-int BoozeSensor::getTemperature() {
+int BoozeSensor::getTemperature() const {
   int raw = thermistor_.read();
 
   float pad = 9850;

@@ -49,7 +49,7 @@ class Booze_O_Meter {
   }
   void set_context(StateContext* context) { context_ = context; }
 
-  bool isStandalone() { return standalone_; }
+  bool isStandalone() const { return standalone_; }
 
   void setup();
   void loop();
