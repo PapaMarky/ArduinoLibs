@@ -52,52 +52,25 @@ Booze_O_Meter::Booze_O_Meter()
 Booze_O_Meter::~Booze_O_Meter() {}
 
 void Booze_O_Meter::setup() {
-  Serial.println('Booze_O_Meter setup');
-  context_->fan()->setup();
-  context_->sensor()->setup();
-
   button_states_[0] = button_states_[1] = button_states_[2] = false;
-
-  context_->display()->begin(9600);
-  delay(10);
-  context_->display()->write('v'); // 0x76); // clear
-  context_->display()->write('w');
-  context_->display()->write((uint8_t)0x00);
-
-  context_->led()->setup();
-  context_->led()->set_color(mdlib::BLACK);
 
   set_state(&START_UP);
   
 }
 
-void Booze_O_Meter::HandleEvents() {
+void Booze_O_Meter::loop() {
+  // Manage Events
   while (mdlib::CountEvents() > 0) {
     mdlib::Event e = mdlib::HandleEvent();
 
-    switch (e.event_type) {
-    case mdlib::Event::BUTTON_UP:
-      break;
-    case mdlib::Event::BUTTON_DOWN:
-      break;
-    case mdlib::Event::BUTTON_LONG_CLICK:
-      Serial.println("BUTTON_LONG_CLICK");
-      break;
-    case mdlib::Event::BUTTON_DOUBLE_CLICK:
-      Serial.println("BUTTON_DOUBLE_CLICK");
-      break;
-    }
+    State* next_state = state_->handle_event(e);
+    if (next_state)
+      set_state(next_state);
   }
-}
-
-void Booze_O_Meter::loop() {
-  // Manage Events
-  HandleEvents();
 
   State* next_state = state_->loop();
-  if (next_state) {
+  if (next_state)
     set_state(next_state);
-  }
 }
   /*
 void Booze_O_Meter::power_on_loop() {

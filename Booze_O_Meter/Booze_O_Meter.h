@@ -42,7 +42,6 @@ class Booze_O_Meter {
 
   ~Booze_O_Meter();
 
-  void set_main_button_pin(int pin) { main_button_.set_pin(pin); }
   void set_up_down_button_pins(int up, int down) {
     up_button_.set_pin(up);
     down_button_.set_pin(down);
@@ -69,7 +68,6 @@ class Booze_O_Meter {
   StateContext* context_;
 
   mdlib::DigitalInput i2c_jumper_;
-  mdlib::Button main_button_;
   mdlib::Button up_button_;
   mdlib::Button down_button_;
 
@@ -81,9 +79,6 @@ class Booze_O_Meter {
   }
   State* state_;
   unsigned long state_start_millis_;
-
-  // loop functions for each State
-  void HandleEvents();
 };
 }
 
