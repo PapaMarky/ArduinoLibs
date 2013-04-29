@@ -18,12 +18,12 @@ namespace mdlib {
   public:
     
     MultiColorLED();
-    void setup();
+    void setup() const;
 
     void set_pins(int red_pin, int green_pin, int blue_pin);
-    void set_color(uint32_t color);
+    void set_color(uint32_t color) const;
 
-    void blend_colors(uint32_t c1, uint32_t c2, float pct);
+    void blend_colors(uint32_t c1, uint32_t c2, float pct) const;
     
   private:
     AnalogOutput red_;

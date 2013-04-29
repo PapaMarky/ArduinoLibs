@@ -5,7 +5,7 @@ namespace mdlib {
   {
   }
 
-  void MultiColorLED::setup() {
+  void MultiColorLED::setup() const {
     red_.setup();
     green_.setup();
     blue_.setup();
@@ -17,13 +17,13 @@ namespace mdlib {
     blue_.set_pin(blue_pin);
   }
 
-  void MultiColorLED::set_color(uint32_t color) {
+  void MultiColorLED::set_color(uint32_t color) const {
     red_.setLevel(  (byte)((color & RED) >> 16));
     green_.setLevel((byte)((color & GREEN) >> 8));
     blue_.setLevel( (byte) (color & BLUE));
   }
 
-  void MultiColorLED::blend_colors(uint32_t c1, uint32_t c2, float pct) {
+  void MultiColorLED::blend_colors(uint32_t c1, uint32_t c2, float pct) const {
     if (pct <= 0.0)
       set_color(c1);
     else if (pct >= 1.0)
