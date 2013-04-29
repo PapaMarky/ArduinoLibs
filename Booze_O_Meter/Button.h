@@ -24,7 +24,7 @@ namespace mdlib {
     Button();
 
     virtual void update();
-    bool isPressed() { return state_ == DOWN; }
+    bool isPressed() const { return state_ == DOWN; }
 
   private:
     enum ClickState {

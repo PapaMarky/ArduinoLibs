@@ -14,24 +14,24 @@ class BoozeSensor {
   void turnOn() { control_.turnOn(); }
   void turnOff() { control_.turnOff(); }
 
-  bool isOn() { return control_.getState(); }
+  bool isOn() const { return control_.getState(); }
   
   void set_state(bool b) { control_.set_state(b); }
 
-  int getTemperature();
+  int getTemperature() const;
   
-  int read() {
+  int read() const {
     return data_.read();
   }
 
-  void setup() {
+  void setup() const {
     control_.setup();
     data_.setup();
     thermistor_.setup();
   }
 
-  float CalculateAlcoholPercent();
-  int RawAlcoholValue() { return data_.read(); }
+  float CalculateAlcoholPercent() const;
+  int RawAlcoholValue() const { return data_.read(); }
   
  private:
   mdlib::DigitalOutput control_;

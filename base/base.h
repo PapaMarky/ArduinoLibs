@@ -13,14 +13,14 @@ namespace mdlib {
   public:
     BaseIO() { }
 
-    virtual void setup() = 0;
+    virtual void setup() const = 0;
     virtual void update() {};
 
     virtual ~BaseIO() {}
 
     // set_pin() must be called BEFORE calling setup()
     void set_pin(int pin) { pin_ = pin; }
-    int pin() {return pin_;}
+    int pin() const {return pin_;}
     
   private:
     int pin_;
@@ -36,9 +36,9 @@ namespace mdlib {
 
     virtual ~DigitalInput() {}
 
-    bool getState() { return (digitalRead(pin()) == HIGH); }
+    bool getState() const { return (digitalRead(pin()) == HIGH); }
 
-    virtual void setup() {
+    virtual void setup() const {
       pinMode(pin(), pullup_ ? INPUT : INPUT_PULLUP);
     }
 
@@ -57,7 +57,7 @@ namespace mdlib {
     virtual ~DigitalOutput() { }
 
     
-    virtual void setup() {
+    virtual void setup() const {
       pinMode(pin(), OUTPUT);
     }
 
@@ -71,7 +71,7 @@ namespace mdlib {
     void turnOn()  { set_state(true); }
     void turnOff() { set_state(false); }
 
-    bool getState() { return state_; }
+    bool getState() const { return state_; }
     
   private:
     bool state_;
@@ -85,7 +85,7 @@ namespace mdlib {
 
     void set_use_external_aref(bool use) { use_external_aref_ = use; }
 
-    virtual void setup() {
+    virtual void setup() const {
       // NOTE: there is also an INTERNAL mode, which is different
       // http://arduino.cc/en/Reference/AnalogReference
       analogReference( use_external_aref_ ? EXTERNAL : DEFAULT );
@@ -94,7 +94,7 @@ namespace mdlib {
     // returns 0 - 1023
     // It takes about 100 microseconds (0.0001 s) to read an analog input,
     // so the maximum reading rate is about 10,000 times a second.
-    int read() {
+    int read() const {
       return analogRead(pin());
     }
   private:
@@ -106,14 +106,14 @@ namespace mdlib {
   public:
     AnalogOutput() : BaseIO() {}
 
-    virtual void setup() { }
+    virtual void setup() const { }
 
-    void setLevel(byte level) {
+    void setLevel(byte level) const {
       analogWrite(pin(), level);
     }
     
     // level is clamped to [0.0 - 1.0]
-    void setLevel(float level) {
+    void setLevel(float level) const {
       if (level < 0.0) level = 0.0;
       if (level > 1.0) level = 1.0;
 
@@ -140,11 +140,11 @@ namespace mdlib {
       is_pressed_ = debounce();
     }
 
-    bool isPressed() {return is_pressed_;}
+    bool isPressed() const {return is_pressed_;}
 
   private:
     bool is_pressed_;
-    bool debounce() {
+    bool debounce() const {
       const int debounceDelay = 10;
       bool state;
       bool previousState;
