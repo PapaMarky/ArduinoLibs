@@ -24,7 +24,9 @@ namespace mdlib {
     void set_color(uint32_t color) const;
 
     void blend_colors(uint32_t c1, uint32_t c2, float pct) const;
-    
+
+    void set_hsv(int h, float s, float v);
+    void set_rgb(int red, int green, int blue);
   private:
     AnalogOutput red_;
     AnalogOutput green_;

@@ -46,4 +46,61 @@ namespace mdlib {
 		(b & 0xff));
     }
   }
+
+  // FROM
+  // http://eduardofv.com/read_post/179-Arduino-RGB-LED-HSV-Color-Wheel-
+//Convert a given HSV (Hue Saturation Value) to RGB(Red Green Blue) and set the led to the color
+//  h is hue value, integer between 0 and 360
+//  s is saturation value, double between 0 and 1
+//  v is value, double between 0 and 1
+//http://splinter.com.au/blog/?p=29
+  void MultiColorLED::set_hsv(int h, float s, float v) {
+    //this is the algorithm to convert from RGB to HSV
+    float r=0; 
+    float g=0; 
+    float b=0;
+
+    float hf=h/60.0;
+
+    int i=(int)floor(h/60.0);
+    float f = h/60.0 - i;
+    float pv = v * (1 - s);
+    float qv = v * (1 - s*f);
+    float tv = v * (1 - s * (1 - f));
+
+    switch (i)
+      {
+      case 0: //rojo dominante
+	r = v;	g = tv;	b = pv;
+	break;
+      case 1: //verde
+	r = qv;	g = v;	b = pv;
+	break;
+      case 2: 
+	r = pv;	g = v;	b = tv;
+	break;
+      case 3: //azul
+	r = pv;	g = qv;	b = v;
+	break;
+      case 4:
+	r = tv;	g = pv;	b = v;
+	break;
+      case 5: //rojo
+	r = v;	g = pv;	b = qv;
+	break;
+      }
+
+    //set each component to a integer value between 0 and 255
+    int red=constrain((int)(255.0*r),0,255);
+    int green=constrain((int)(255.0*g),0,255);
+    int blue=constrain((int)(255.0*b),0,255);
+
+    set_rgb(red,green,blue);
+  }
+
+  void MultiColorLED::set_rgb(int red, int green, int blue) {
+    red_.setLevel((byte)red);
+    green_.setLevel((byte)green);
+    blue_.setLevel((byte)blue);
+  }
 } // namespace mdlib
