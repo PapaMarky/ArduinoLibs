@@ -3,6 +3,7 @@
 #define BOOZE_SENSOR__
 
 #include "../base/base.h"
+#include "SlidingDataWindow.h"
 
 namespace BOM {
 class BoozeSensor {
@@ -24,10 +25,14 @@ class BoozeSensor {
     return data_.read();
   }
 
-  void setup() const {
+  void setup()  {
     control_.setup();
     data_.setup();
     thermistor_.setup();
+    data_window_.SetWindowSize(25);
+    data_window_.SetStatbleSize(1.0);
+    thermistor_window_.SetWindowSize(25);
+    thermistor_window_.SetStatbleSize(1.0);
   }
 
   float CalculateAlcoholPercent() const;
@@ -36,7 +41,10 @@ class BoozeSensor {
  private:
   mdlib::DigitalOutput control_;
   mdlib::AnalogInput data_;
-  mdlib::AnalogInput thermistor_;  
+  mdlib::AnalogInput thermistor_;
+
+  mdlib::SlidingDataWindow data_window_;
+  mdlib::SlidingDataWindow thermistor_window_;
 };
 } // namespace BOM
 #endif // BOOZE_SENSOR__
