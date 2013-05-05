@@ -11,9 +11,9 @@ class BoozeSensor {
   BoozeSensor();
 
   void set_pins(int control, int data, int temperature);
-  
-  void turnOn() { control_.turnOn(); }
-  void turnOff() { control_.turnOff(); }
+
+  void turnOn();
+  void turnOff();
 
   bool isOn() const { return control_.getState(); }
   

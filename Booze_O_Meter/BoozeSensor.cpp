@@ -10,6 +10,16 @@ BoozeSensor::BoozeSensor()
 const float alcohol_sensor_zero = 300;
 const float alcohol_sensor_100 = 1023;
 
+void BoozeSensor::turnOn() {
+  control_.turnOn();
+  data_window_.Reset();
+  thermistor_window_.Reset();
+}
+
+void BoozeSensor::turnOff() {
+  control_.turnOff();
+}
+
 float BoozeSensor::CalculateAlcoholPercent() const {
   float sensor_value = (float)data_.read();
 
