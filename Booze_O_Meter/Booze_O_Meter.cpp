@@ -20,7 +20,6 @@ PowerSaverState Booze_O_Meter::POWER_SAVER;
 // Booze_O_Meter
 ////////////////////////////////////////////////////////////
 Booze_O_Meter::Booze_O_Meter()
-  : standalone_(true)
 {
   // set up the states
   // - set each one's next_state and timeout_next_state
@@ -55,7 +54,12 @@ void Booze_O_Meter::setup() {
   button_states_[0] = button_states_[1] = button_states_[2] = false;
 
   set_state(&START_UP);
+}
+
   
+void Booze_O_Meter::set_context(StateContext* context) {
+  context_ = context;
+  State::set_context(context);
 }
 
 void Booze_O_Meter::loop() {

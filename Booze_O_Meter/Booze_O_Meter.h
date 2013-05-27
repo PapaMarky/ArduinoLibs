@@ -20,7 +20,6 @@ namespace BOM {
  * Runs on the chip inside the booze-o-meter.
  *
  * Parts List:
- * - Standalone Jumper (i2c_jumper_)
  * - Fan Control (fan_)
  * - Gas Sensor (Control)
  * - Gas Sensor (Data)
@@ -42,19 +41,12 @@ class Booze_O_Meter {
 
   ~Booze_O_Meter();
 
-  void set_up_down_button_pins(int up, int down) {
-    up_button_.set_pin(up);
-    down_button_.set_pin(down);
-  }
-  void set_context(StateContext* context) { context_ = context; }
-
-  bool isStandalone() const { return standalone_; }
+  void set_context(StateContext* context);
 
   void setup();
   void loop();
 
  private:
-  bool standalone_;
   // concrete state machines
   static StartUpState START_UP;
   static WarmUpState WARM_UP;
@@ -68,14 +60,20 @@ class Booze_O_Meter {
   StateContext* context_;
 
   mdlib::DigitalInput i2c_jumper_;
-  mdlib::Button up_button_;
-  mdlib::Button down_button_;
 
   bool button_states_[3];
 
   void set_state(State* state) {
+    if (state_) {
+      state_->leave_state();
+    }
     state_ = state;
     state_start_millis_ = millis();
+    state_->enter_state();
+
+    Serial.print("set_state(\"");
+    Serial.print(state_->name());
+    Serial.println("\")");
   }
   State* state_;
   unsigned long state_start_millis_;
