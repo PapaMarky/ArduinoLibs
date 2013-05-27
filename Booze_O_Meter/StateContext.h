@@ -3,8 +3,11 @@
 #define STATE_CONTEXT_
 
 class SoftwareSerial;
-class mdlib::DigitalOutput;
-class mdlib::MultiColorLED;
+namespace mdlib {
+  class DigitalOutput;
+  class MultiColorLED;
+  class LightedButton;
+}
 
 namespace BOM {
 
@@ -18,11 +21,15 @@ class StateContext {
   void set_fan(mdlib::DigitalOutput* fan) { fan_ = fan; }
   void set_rgb_led(mdlib::MultiColorLED* rgb_led) { rgb_led_ = rgb_led; }
   void set_sensor(BoozeSensor* sensor) { sensor_ = sensor; }
+  void set_button(mdlib::LightedButton* button) { led_button_ = button; }
 
-  mdlib::DigitalOutput* fan() const {return fan_;}
-  SoftwareSerial* display() const {return display_;}
-  mdlib::MultiColorLED* led() const {return rgb_led_;}
-  BoozeSensor* sensor() const {return sensor_;}
+  mdlib::DigitalOutput* fan()    const { return fan_; }
+  SoftwareSerial* display()      const { return display_; }
+  mdlib::MultiColorLED* led()    const { return rgb_led_; }
+  BoozeSensor* sensor()          const { return sensor_; }
+  mdlib::LightedButton* button() const { return led_button_; }
+
+  void update();
 
  private:
   // context items (things the states need to manipulate)
@@ -35,6 +42,7 @@ class StateContext {
   SoftwareSerial* display_;
   mdlib::MultiColorLED* rgb_led_;
   BoozeSensor* sensor_;
+  mdlib::LightedButton* led_button_;
 };
 
 } // namespace BOM
