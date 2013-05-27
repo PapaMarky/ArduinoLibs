@@ -25,7 +25,7 @@ void StartUpState::enter_state() {
 
   s_context->fan()->turnOn();
   s_context->sensor()->turnOn();
-  s_context->button()->turnOff();
+  s_context->button()->TurnOff();
 }
 
 State* StartUpState::loop() {

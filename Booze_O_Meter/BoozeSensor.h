@@ -20,11 +20,13 @@ class BoozeSensor {
   void set_state(bool b) { control_.set_state(b); }
 
   int getTemperature() const;
-  
+  int RawThermistor() { return thermistor_.read(); }
   int read() const {
     return data_.read();
   }
 
+  void update() {}
+  
   void setup()  {
     control_.setup();
     data_.setup();

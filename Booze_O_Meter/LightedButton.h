@@ -17,11 +17,11 @@ namespace mdlib {
     void setup();
     void update();
 
-    void setBrightness(float brightness) { brightness_ = brightness; }
-    void turnOn() const { led_.setLevel(brightness_); }
-    void turnOff() const { led_.setLevel(0.0f); }
+    void SetBrightness(float brightness) { brightness_ = brightness; }
+    void TurnOn() const { led_.setLevel(brightness_); }
+    void TurnOff() const { led_.setLevel(0.0f); }
 
-    bool isPressed() { return button_.isPressed(); }
+    bool IsPressed() { return button_.isPressed(); }
 
   private:
     float brightness_;
