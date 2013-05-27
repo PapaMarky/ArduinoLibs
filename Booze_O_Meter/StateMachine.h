@@ -5,12 +5,16 @@
 #include "EventQueue.h"
 
 namespace BOM {
+class StateContext;
+
 class State {
  public:
   State() {};
   virtual ~State() {}
 
-  virtual void enter_state() {};
+  static void set_context(StateContext* context) { s_context = context; }
+
+  virtual void enter_state();
   virtual void leave_state() {};
 
   virtual State* loop() = 0;
@@ -18,6 +22,12 @@ class State {
 
   void set_next_state(State* next_state) {next_state_ = next_state;}
   void set_timeout_next_state(State* timeout_next_state) {timeout_next_state_ = timeout_next_state;}
+
+  virtual const char* name() const = 0;
+
+ protected:
+  static StateContext* s_context;
+  unsigned long start_time_;
 
  private:
   State* next_state_;
@@ -28,10 +38,13 @@ class StartUpState : public State {
  public:
   StartUpState() {}
 
+  virtual void enter_state();
   virtual State* loop();
   virtual State* handle_event(mdlib::Event e);
 
   virtual ~StartUpState() {}
+
+  virtual const char* name() const { return "StartUpState"; }
  private:
 };
 
@@ -42,6 +55,8 @@ class WarmUpState : public State {
 
   virtual State* loop() { return 0;}
   virtual State* handle_event(mdlib::Event e) {return 0;}
+
+  virtual const char* name() const { return "WarmUpState"; }
  private:
 };
 
@@ -52,6 +67,8 @@ class ReadyState : public State {
   
   virtual State* loop() { return 0;}
   virtual State* handle_event(mdlib::Event e) {return 0;}
+
+  virtual const char* name() const { return "ReadyState"; }
  private:
 };
 
@@ -62,6 +79,8 @@ class SamplingState : public State {
 
   virtual State* loop() { return 0;}
   virtual State* handle_event(mdlib::Event e) { return 0;}
+
+  virtual const char* name() const { return "SamplingState"; }
  private:
 };
 
@@ -72,6 +91,8 @@ class PostSampleState : public State {
 
   virtual State* loop() { return 0;}
   virtual State* handle_event(mdlib::Event e) { return 0;}
+
+  virtual const char* name() const { return "PostSampleState"; }
  private:
 };
 
@@ -82,6 +103,8 @@ class PostSample2State : public State {
 
   virtual State* loop() { return 0;}
   virtual State* handle_event(mdlib::Event e) { return 0;}
+
+  virtual const char* name() const { return "PostSample2State"; }
  private:
 };
 
@@ -92,6 +115,8 @@ class SleepState : public State {
 
   virtual State* loop() { return 0;}
   virtual State* handle_event(mdlib::Event e) { return 0;}
+
+  virtual const char* name() const { return "SleepState"; }
  private:
 };
 
@@ -102,6 +127,8 @@ class PowerSaverState : public State {
 
   virtual State* loop() { return 0;}
   virtual State* handle_event(mdlib::Event e) { return 0;}
+
+  virtual const char* name() const { return "PowerSaverState"; }
  private:
 };
 }
