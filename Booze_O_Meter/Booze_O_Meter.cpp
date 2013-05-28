@@ -51,8 +51,7 @@ Booze_O_Meter::Booze_O_Meter()
 Booze_O_Meter::~Booze_O_Meter() {}
 
 void Booze_O_Meter::setup() {
-  button_states_[0] = button_states_[1] = button_states_[2] = false;
-
+  context_->setup();
   set_state(&START_UP);
 }
 
@@ -62,9 +61,12 @@ void Booze_O_Meter::set_context(StateContext* context) {
   State::set_context(context);
 }
 
-void Booze_O_Meter::loop() {
+void Booze_O_Meter::update() {
+  context_->update();
+
   // Manage Events
   while (mdlib::CountEvents() > 0) {
+    Serial.println("HANDLING EVENT");
     mdlib::Event e = mdlib::HandleEvent();
 
     State* next_state = state_->handle_event(e);

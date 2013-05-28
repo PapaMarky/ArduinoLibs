@@ -44,7 +44,7 @@ class Booze_O_Meter {
   void set_context(StateContext* context);
 
   void setup();
-  void loop();
+  void update();
 
  private:
   // concrete state machines
@@ -60,8 +60,6 @@ class Booze_O_Meter {
   StateContext* context_;
 
   mdlib::DigitalInput i2c_jumper_;
-
-  bool button_states_[3];
 
   void set_state(State* state) {
     if (state_) {
