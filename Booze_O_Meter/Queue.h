@@ -10,7 +10,15 @@ namespace mdlib {
     class Queue {
   public:
 
-    Queue(T* data, int capacity): data_(data), capacity_(0), front_(0), back_(0){};
+  Queue(T* data, int capacity)
+    : data_(data),
+      capacity_(capacity),
+      length_(0),
+      front_(0),
+      back_(0)
+	{
+	};
+
     ~Queue(){};
 
     int capacity() const { return capacity_; }
