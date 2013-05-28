@@ -28,8 +28,6 @@ class State {
  protected:
   static StateContext* s_context;
   unsigned long start_time_;
-
- private:
   State* next_state_;
   State* timeout_next_state_;
 };
@@ -39,6 +37,8 @@ class StartUpState : public State {
   StartUpState() {}
 
   virtual void enter_state();
+  virtual void leave_state();
+
   virtual State* loop();
   virtual State* handle_event(mdlib::Event e);
 
@@ -46,6 +46,7 @@ class StartUpState : public State {
 
   virtual const char* name() const { return "StartUpState"; }
  private:
+  static const unsigned int DURATION = 3000;
 };
 
 class WarmUpState : public State {
@@ -53,7 +54,9 @@ class WarmUpState : public State {
   WarmUpState() {}
   ~WarmUpState() {}
 
-  virtual State* loop() { return 0;}
+  virtual void enter_state();
+
+  virtual State* loop();
   virtual State* handle_event(mdlib::Event e) {return 0;}
 
   virtual const char* name() const { return "WarmUpState"; }
@@ -65,8 +68,10 @@ class ReadyState : public State {
   ReadyState() {}
   ~ReadyState() {}
   
-  virtual State* loop() { return 0;}
-  virtual State* handle_event(mdlib::Event e) {return 0;}
+  virtual void enter_state();
+
+  virtual State* loop();
+  virtual State* handle_event(mdlib::Event e);
 
   virtual const char* name() const { return "ReadyState"; }
  private:
