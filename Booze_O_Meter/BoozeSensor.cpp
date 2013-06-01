@@ -1,6 +1,9 @@
 // Copyright (c) 2013 Mark Dyer. All rights reserved.
 
+#include <Arduino.h>
+
 #include "BoozeSensor.h"
+
 namespace BOM {
 BoozeSensor::BoozeSensor()
 {
@@ -10,16 +13,40 @@ BoozeSensor::BoozeSensor()
 const float alcohol_sensor_zero = 300;
 const float alcohol_sensor_100 = 1023;
 
+void BoozeSensor::TakeSample() {
+  data_window_.AddSample((float)RawAlcoholValue());
+  thermistor_window_.AddSample((float)RawThermistor());
+  last_sample_time_ = millis();
+}
+
 void BoozeSensor::turnOn() {
   control_.turnOn();
+  on_time_ = millis();
   data_window_.Reset();
   thermistor_window_.Reset();
+  TakeSample();
 }
 
 void BoozeSensor::turnOff() {
   control_.turnOff();
 }
 
+void BoozeSensor::update() {
+  if (isOn()) {
+    unsigned int elapsed = millis() - last_sample_time_;
+    if (elapsed >= 400) {
+      TakeSample();
+
+      if (data_window_.IsReady()) {
+	Serial.print("DATA: ");
+	data_window_.Dump();
+	Serial.print("TEMP: ");
+	thermistor_window_.Dump();
+      }
+    }
+  }
+}
+  
 float BoozeSensor::CalculateAlcoholPercent() const {
   float sensor_value = (float)data_.read();
 

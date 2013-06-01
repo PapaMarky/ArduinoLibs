@@ -82,11 +82,15 @@ class SamplingState : public State {
   SamplingState() {}
   ~SamplingState() {}
 
-  virtual State* loop() { return 0;}
-  virtual State* handle_event(mdlib::Event e) { return 0;}
+  virtual void enter_state();
+
+  virtual State* loop();
+  virtual State* handle_event(mdlib::Event e);
 
   virtual const char* name() const { return "SamplingState"; }
  private:
+  int start_sample_;
+  int max_sample_;
 };
 
 class PostSampleState : public State {

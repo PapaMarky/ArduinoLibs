@@ -45,13 +45,22 @@ class SlidingDataWindow {
   float Minimum() const;
   float Maximum() const;
   float Average() const;
-  float Mean() const;
+  float Median() const;
   float StandardDeviation() const;
+
+  void Dump();
 
  private:
   static const int POOL_SIZE = 100;
   int window_size_;
   float stable_size_;
+  float* data_;
+  float minimum_;
+  float maximum_;
+  float average_;
+  float standard_deviation_;
+  int next_;
+  int count_;
 };
 
 } // namespace mdlib

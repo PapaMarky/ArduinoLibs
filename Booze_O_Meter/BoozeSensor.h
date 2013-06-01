@@ -25,28 +25,33 @@ class BoozeSensor {
     return data_.read();
   }
 
-  void update() {}
+  void update();
   
   void setup()  {
     control_.setup();
     data_.setup();
     thermistor_.setup();
     data_window_.SetWindowSize(25);
-    data_window_.SetStableSize(1.0);
+    data_window_.SetStableSize(0.01);
     thermistor_window_.SetWindowSize(25);
-    thermistor_window_.SetStableSize(1.0);
+    thermistor_window_.SetStableSize(0.01);
   }
 
   float CalculateAlcoholPercent() const;
   int RawAlcoholValue() const { return data_.read(); }
   
  private:
+  void TakeSample();
+
   mdlib::DigitalOutput control_;
   mdlib::AnalogInput data_;
   mdlib::AnalogInput thermistor_;
 
   mdlib::SlidingDataWindow data_window_;
   mdlib::SlidingDataWindow thermistor_window_;
+
+  unsigned int on_time_;
+  unsigned int last_sample_time_;
 };
 } // namespace BOM
 #endif // BOOZE_SENSOR__

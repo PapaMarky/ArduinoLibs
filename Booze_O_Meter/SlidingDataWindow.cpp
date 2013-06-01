@@ -1,17 +1,26 @@
+#include <Arduino.h>
 #include "SlidingDataWindow.h"
 
 namespace mdlib {
 
 SlidingDataWindow::SlidingDataWindow()
   : window_size_(POOL_SIZE),
-    stable_size_(1.0)
+    stable_size_(0.01f)
 {
+  data_ = reinterpret_cast<float*>(malloc(sizeof(float) * window_size_));
 }
 
-SlidingDataWindow::~SlidingDataWindow() {}
+SlidingDataWindow::~SlidingDataWindow() {
+  if (data_)
+    free(data_);
+  data_ = 0;
+}
 
 void SlidingDataWindow::SetWindowSize(int size) {
   window_size_ = size;
+  if (data_)
+    free(data_);
+  data_ = reinterpret_cast<float*>(malloc(sizeof(float) * window_size_));
 }
 
 void SlidingDataWindow::SetStableSize(float size) {
@@ -19,46 +28,95 @@ void SlidingDataWindow::SetStableSize(float size) {
 }
 
 void SlidingDataWindow::Reset() {
-  // TODO: write me
+  next_ = count_ = 0;
+}
+
+void SlidingDataWindow::Dump() {
+  char buffer[256];
+  Serial.print("MIN: ");
+  Serial.print(minimum_, 2);
+  Serial.print(", MAX: ");
+  Serial.print(maximum_, 2);
+  Serial.print(", AVE: ");
+  Serial.print(average_, 2);
+  Serial.print(", MED: ");
+  Serial.print(Median(), 2);
+  Serial.print(", STD DEV: ");
+  Serial.print(standard_deviation_);
+  if (IsStable()) {
+    Serial.print(" -- (");
+    Serial.print(stable_size_);
+    Serial.print(") -- STABLE");
+  }
+  Serial.println("");
 }
 
 void SlidingDataWindow::AddSample(float sample) {
-  // TODO: write me
+  data_[next_] = sample;
+  next_++;
+  if (next_ >= window_size_)
+    next_ = 0;
+
+  if (count_ < window_size_)
+    count_++;
+
+  if (IsReady()) {
+    float total = 0.0;
+    float variance = 0.0;
+    minimum_ = maximum_ = data_[0];
+    for (int i = 0; i < window_size_; i++) {
+      if (data_[i] < minimum_)
+	minimum_ = data_[i];
+      if (data_[i] > maximum_)
+	maximum_ = data_[i];
+      total += data_[i];
+    }
+    average_ = total/(float)window_size_;
+    for (int i = 0; i < window_size_; i++) {
+      int v = data_[i] - average_;
+      variance += (v*v);
+    }
+    standard_deviation_ = sqrt(variance/(float)window_size_);
+  }
 }
 
 bool SlidingDataWindow::IsReady() const {
-  // TODO: write me
+  return (count_ >= window_size_);
 }
 
 bool SlidingDataWindow::IsRising() const {
   // TODO: write me
+  return false;
 }
 
 bool SlidingDataWindow::IsFalling() const {
   // TODO: write me
+  return false;
 }
+
 bool SlidingDataWindow::IsStable() const {
-  // TODO: write me
+  return (standard_deviation_ < stable_size_);
 }
 
 float SlidingDataWindow::Minimum() const {
-  // TODO: write me
+  return minimum_;
 }
 
 float SlidingDataWindow::Maximum()  const {
-  // TODO: write me
+  return maximum_;
 }
 
 float SlidingDataWindow::Average()  const {
-  // TODO: write me
+  return average_;
 }
 
-float SlidingDataWindow::Mean()  const {
-  // TODO: write me
+float SlidingDataWindow::Median()  const {
+  return minimum_ + (maximum_ - minimum_) / 2.0f;
 }
 
 float SlidingDataWindow::StandardDeviation()  const {
   // TODO: write me
+  return 0.0f;
 }
 
 
