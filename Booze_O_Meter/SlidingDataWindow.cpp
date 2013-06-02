@@ -7,20 +7,9 @@ SlidingDataWindow::SlidingDataWindow()
   : window_size_(POOL_SIZE),
     stable_size_(0.01f)
 {
-  data_ = reinterpret_cast<float*>(malloc(sizeof(float) * window_size_));
 }
 
 SlidingDataWindow::~SlidingDataWindow() {
-  if (data_)
-    free(data_);
-  data_ = 0;
-}
-
-void SlidingDataWindow::SetWindowSize(int size) {
-  window_size_ = size;
-  if (data_)
-    free(data_);
-  data_ = reinterpret_cast<float*>(malloc(sizeof(float) * window_size_));
 }
 
 void SlidingDataWindow::SetStableSize(float size) {
@@ -63,13 +52,19 @@ void SlidingDataWindow::AddSample(float sample) {
   if (IsReady()) {
     float total = 0.0;
     float variance = 0.0;
-    minimum_ = maximum_ = data_[0];
+    float *d = data_;
+    minimum_ = maximum_ = *d;
     for (int i = 0; i < window_size_; i++) {
-      if (data_[i] < minimum_)
-	minimum_ = data_[i];
+      float dd = *d;
+      if (dd < minimum_) {
+	minimum_ = dd;
+      }
       if (data_[i] > maximum_)
-	maximum_ = data_[i];
-      total += data_[i];
+	maximum_ = dd;
+
+      total += dd;
+
+      d++;
     }
     average_ = total/(float)window_size_;
     for (int i = 0; i < window_size_; i++) {

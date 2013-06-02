@@ -31,9 +31,7 @@ class BoozeSensor {
     control_.setup();
     data_.setup();
     thermistor_.setup();
-    data_window_.SetWindowSize(25);
     data_window_.SetStableSize(0.01);
-    thermistor_window_.SetWindowSize(25);
     thermistor_window_.SetStableSize(0.01);
   }
 

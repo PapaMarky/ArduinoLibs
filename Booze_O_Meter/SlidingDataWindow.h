@@ -51,10 +51,10 @@ class SlidingDataWindow {
   void Dump();
 
  private:
-  static const int POOL_SIZE = 100;
+  static const int POOL_SIZE = 25;
   int window_size_;
   float stable_size_;
-  float* data_;
+  float data_[25];
   float minimum_;
   float maximum_;
   float average_;
