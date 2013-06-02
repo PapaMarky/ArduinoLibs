@@ -81,6 +81,7 @@ State* WarmUpState::loop() {
   void ReadyState::enter_state() {
     TimedState::enter_state();
 
+    s_context->sensor()->turnOff();
     s_context->sensor()->turnOn();
     s_context->button()->TurnOff();
     s_context->display()->clear();

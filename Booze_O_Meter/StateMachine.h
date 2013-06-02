@@ -3,6 +3,7 @@
 #define STATE_MACHINE_H__
 
 #include "EventQueue.h"
+#include "Timers.h"
 
 namespace BOM {
 class StateContext;
@@ -37,7 +38,7 @@ class TimedState : public State {
  TimedState() : timeout_(5*60*1000) {}
   virtual ~TimedState() {}
 
-  virtual void enter_state() { State::enter_State(); StartTimer(); }
+  virtual void enter_state() { State::enter_state(); StartTimer(); }
   virtual void leave_state() { StopTimer(); }
 
  protected:
@@ -47,7 +48,7 @@ class TimedState : public State {
   void UpdateTimer() { timer_.update(); }
 
  private:
-  CountdownTimer timer_;
+  mdlib::CountdownTimer timer_;
   unsigned long timeout_;
 };
  
