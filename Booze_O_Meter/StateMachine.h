@@ -32,6 +32,25 @@ class State {
   State* timeout_next_state_;
 };
 
+class TimedState : public State {
+ public:
+ TimedState() : timeout_(5*60*1000) {}
+  virtual ~TimedState() {}
+
+  virtual void enter_state() { State::enter_State(); StartTimer(); }
+  virtual void leave_state() { StopTimer(); }
+
+ protected:
+  void StartTimer() { timer_.Start(timeout_); }
+  void StopTimer() { timer_.Stop(); }
+  void SetTimeout(unsigned long t) { timeout_ = t; }
+  void UpdateTimer() { timer_.update(); }
+
+ private:
+  CountdownTimer timer_;
+  unsigned long timeout_;
+};
+ 
 class StartUpState : public State {
  public:
   StartUpState() {}
@@ -63,18 +82,20 @@ class WarmUpState : public State {
  private:
 };
 
-class ReadyState : public State {
+class ReadyState : public TimedState {
  public:
-  ReadyState() {}
+  ReadyState() { SetTimeout(3*60*1000); }
   ~ReadyState() {}
   
   virtual void enter_state();
+  virtual void leave_state();
 
   virtual State* loop();
   virtual State* handle_event(mdlib::Event e);
 
   virtual const char* name() const { return "ReadyState"; }
  private:
+
 };
 
 class SamplingState : public State {

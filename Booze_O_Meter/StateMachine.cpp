@@ -79,7 +79,7 @@ State* WarmUpState::loop() {
 /////////////////// ReadyState
 
   void ReadyState::enter_state() {
-    State::enter_state();
+    TimedState::enter_state();
 
     s_context->sensor()->turnOn();
     s_context->button()->TurnOff();
@@ -87,8 +87,13 @@ State* WarmUpState::loop() {
     s_context->fan()->turnOff();
   }
 
+  void ReadyState::leave_state() {
+    StopTimer();
+  }
+
   State* ReadyState::loop() {
     unsigned long elapsed = millis() - start_time_;
+    UpdateTimer();
 
     // make the button blink
     float secs =  floor((float)elapsed/1000.0f);
@@ -110,8 +115,10 @@ State* WarmUpState::loop() {
     Serial.print("Got event: ");
     Serial.println(event_name(e));
     if (e.event_type == mdlib::Event::BUTTON_CLICK) {
-      Serial.println("BUTTON_CLICK");
       return next_state_;
+    }
+    else if (e.event_type == mdlib::Event::TIMER_DONE) {
+      return timeout_next_state_;
     }
 
     return (State*)0;
