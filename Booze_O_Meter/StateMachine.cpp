@@ -61,18 +61,25 @@ State* StartUpState::handle_event(mdlib::Event e) {
 void WarmUpState::enter_state() {
   State::enter_state();
   s_context->sensor()->turnOn();
+  s_context->fan()->turnOff();
   s_context->button()->TurnOff();
+  s_context->display()->clear();
+  display_value_ = -10.0;
 }
+
 
 State* WarmUpState::loop() {
   unsigned long elapsed = millis() - start_time_;
 
-  if (elapsed >= 3000)
-    return next_state_;
+  float v = s_context->sensor()->DataStdDev();
+  if (v != display_value_) {
+    display_value_ = v;
+    s_context->display()->set(display_value_, 2);
+  }
 
-  int n = 100 - (int)(100.0f * (float)elapsed / 3000.0f);
-  s_context->display()->set(n);
-  delay(10);
+  if (s_context->sensor()->IsReady())
+   return next_state_;
+
   return (State*)0;
 }
 

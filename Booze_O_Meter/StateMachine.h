@@ -81,6 +81,7 @@ class WarmUpState : public State {
 
   virtual const char* name() const { return "WarmUpState"; }
  private:
+  float display_value_;
 };
 
 class ReadyState : public TimedState {

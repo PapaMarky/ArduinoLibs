@@ -24,7 +24,6 @@ void BoozeSensor::turnOn() {
   on_time_ = millis();
   data_window_.Reset();
   thermistor_window_.Reset();
-  TakeSample();
 }
 
 void BoozeSensor::turnOff() {
@@ -32,18 +31,10 @@ void BoozeSensor::turnOff() {
 }
 
 void BoozeSensor::update() {
-  if (isOn()) {
+  if (IsOn()) {
     unsigned int elapsed = millis() - last_sample_time_;
-    if (elapsed >= 400) {
+    if (elapsed >= 400)
       TakeSample();
-
-      if (data_window_.IsReady()) {
-	Serial.print("DATA: ");
-	data_window_.Dump();
-	Serial.print("TEMP: ");
-	thermistor_window_.Dump();
-      }
-    }
   }
 }
   

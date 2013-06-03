@@ -15,7 +15,11 @@ class BoozeSensor {
   void turnOn();
   void turnOff();
 
-  bool isOn() const { return control_.getState(); }
+  bool IsOn() const { return control_.getState(); }
+
+  bool IsReady() const {
+    return IsOn() && data_window_.IsStable() && thermistor_window_.IsStable();
+  }
   
   void set_state(bool b) { control_.set_state(b); }
 
@@ -31,13 +35,15 @@ class BoozeSensor {
     control_.setup();
     data_.setup();
     thermistor_.setup();
-    data_window_.SetStableSize(0.01);
-    thermistor_window_.SetStableSize(0.01);
+    data_window_.SetStableSize(0.7);
+    thermistor_window_.SetStableSize(0.7);
   }
 
   float CalculateAlcoholPercent() const;
   int RawAlcoholValue() const { return data_.read(); }
-  
+
+  float DataStdDev() { return data_window_.StandardDeviation(); }
+
  private:
   void TakeSample();
 

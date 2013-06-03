@@ -22,7 +22,9 @@ void SlidingDataWindow::Reset() {
 
 void SlidingDataWindow::Dump() {
   char buffer[256];
-  Serial.print("MIN: ");
+  //  Serial.print("NXT: ");
+  //  Serial.print(next_);
+  Serial.print(", MIN: ");
   Serial.print(minimum_, 2);
   Serial.print(", MAX: ");
   Serial.print(maximum_, 2);
@@ -30,7 +32,7 @@ void SlidingDataWindow::Dump() {
   Serial.print(average_, 2);
   Serial.print(", MED: ");
   Serial.print(Median(), 2);
-  Serial.print(", STD DEV: ");
+  Serial.print(", DEV: ");
   Serial.print(standard_deviation_);
   if (IsStable()) {
     Serial.print(" -- (");
@@ -90,7 +92,7 @@ bool SlidingDataWindow::IsFalling() const {
 }
 
 bool SlidingDataWindow::IsStable() const {
-  return (standard_deviation_ < stable_size_);
+  return (IsReady() && standard_deviation_ < stable_size_);
 }
 
 float SlidingDataWindow::Minimum() const {
@@ -110,8 +112,7 @@ float SlidingDataWindow::Median()  const {
 }
 
 float SlidingDataWindow::StandardDeviation()  const {
-  // TODO: write me
-  return 0.0f;
+  return standard_deviation_;
 }
 
 
