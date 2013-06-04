@@ -66,7 +66,7 @@ class StartUpState : public State {
 
   virtual const char* name() const { return "StartUpState"; }
  private:
-  static const unsigned int DURATION = 3000;
+  static const unsigned int DURATION = 8000;
 };
 
 class WarmUpState : public State {
@@ -82,6 +82,7 @@ class WarmUpState : public State {
   virtual const char* name() const { return "WarmUpState"; }
  private:
   float display_value_;
+  unsigned long pulse_start_;
 };
 
 class ReadyState : public TimedState {

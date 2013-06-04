@@ -65,13 +65,32 @@ void WarmUpState::enter_state() {
   s_context->button()->TurnOff();
   s_context->display()->clear();
   display_value_ = -10.0;
+  pulse_start_ = millis();
 }
 
 
 State* WarmUpState::loop() {
-  unsigned long elapsed = millis() - start_time_;
+  const unsigned long PULSE_TIME = 450;
+  const unsigned long GAP_TIME = 1550;
+  unsigned long elapsed = millis() - pulse_start_;
 
-  float v = s_context->sensor()->DataStdDev();
+  if (elapsed > PULSE_TIME + GAP_TIME) {
+    pulse_start_ = millis();
+    elapsed = 0;
+  }
+
+  float v;
+
+  if (elapsed < PULSE_TIME) {
+    v = 1.0 - (float)elapsed / (float)PULSE_TIME;
+    v *= v;
+    s_context->led()->set_hsv(240, 1.0, v);
+  }
+  else {
+    s_context->led()->set_hsv(240, 1.0, 0.005);
+  }
+
+  v = s_context->sensor()->DataStdDev();
   if (v != display_value_) {
     display_value_ = v;
     s_context->display()->set(display_value_, 2);
@@ -93,6 +112,7 @@ State* WarmUpState::loop() {
     s_context->button()->TurnOff();
     s_context->display()->clear();
     s_context->fan()->turnOff();
+    s_context->led()->TurnOff();
   }
 
   void ReadyState::leave_state() {
@@ -146,7 +166,8 @@ State* WarmUpState::loop() {
 
   State* SamplingState::handle_event(mdlib::Event e) {
     static bool fanIsOn = false;
-    
+
+    // Test Fan effect on sensor
     if (e.event_type == mdlib::Event::BUTTON_CLICK) {
       if (fanIsOn) {
 	s_context->fan()->turnOff();
@@ -157,14 +178,14 @@ State* WarmUpState::loop() {
 	fanIsOn = true;
       }
     }
-    
+
     /*
     if (e.event_type == mdlib::Event::BUTTON_CLICK) {
-      hue += 45;
+      hue += 5;
       if (hue >= 360)
 	hue = 0;
 
-      // 0 -> 90
+      // 0 -> 90 (120)
       // Red -> Green
       s_context->display()->set(hue);
       s_context->led()->set_hsv(hue, 1.0f,  1.0f);
@@ -181,7 +202,7 @@ State* WarmUpState::loop() {
     if (x >= in_max)
       return 0;
 
-    float out_min = 90.0;
+    float out_min = 120.0;
     float out_max = 0.0;
 
     return (int)( (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min );
@@ -195,8 +216,7 @@ State* WarmUpState::loop() {
       int hue = hueMap(pct);
 
       s_context->led()->set_hsv(hue, 1.0f, 1.0f);
-      //      s_context->display()->set((int)(pct * 100.0f));
-      s_context->display()->set((int)(pct*100.0));
+      s_context->display()->set((int)(pct * 100.0));
     }
 
     return 0;
