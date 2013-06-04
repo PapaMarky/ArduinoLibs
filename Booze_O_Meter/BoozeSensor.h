@@ -35,8 +35,10 @@ class BoozeSensor {
     control_.setup();
     data_.setup();
     thermistor_.setup();
-    data_window_.SetStableSize(0.7);
-    thermistor_window_.SetStableSize(0.7);
+    data_window_.SetStableSize(0.8);
+    data_window_.SetTrendSampleSize(5);
+    thermistor_window_.SetStableSize(4.0);
+    thermistor_window_.SetTrendSampleSize(5);
   }
 
   float CalculateAlcoholPercent() const;

@@ -5,7 +5,11 @@ namespace mdlib {
 
 SlidingDataWindow::SlidingDataWindow()
   : window_size_(POOL_SIZE),
-    stable_size_(0.01f)
+    stable_size_(0.01f),
+    trend_sample_size_(10),
+    stable_sample_count_(0),
+    rising_sample_count_(0),
+    falling_sample_count_(0)
 {
 }
 
@@ -18,6 +22,9 @@ void SlidingDataWindow::SetStableSize(float size) {
 
 void SlidingDataWindow::Reset() {
   next_ = count_ = 0;
+  stable_sample_count_ =
+    rising_sample_count_ =
+    falling_sample_count_ = 0;
 }
 
 void SlidingDataWindow::Dump() {
@@ -74,6 +81,47 @@ void SlidingDataWindow::AddSample(float sample) {
       variance += (v*v);
     }
     standard_deviation_ = sqrt(variance/(float)window_size_);
+
+    if (standard_deviation_ < stable_size_) {
+      stable_sample_count_++;
+      //      Serial.print("stable count: ");
+      //      Serial.print(stable_sample_count_);
+      //      if (IsStable())
+      //	Serial.print(" -- STABLE");
+      //      Serial.println("");
+      rising_sample_count_ = 0;
+      falling_sample_count_ = 0;
+    }
+    else {
+      float first = GetFirstSample();
+      float last = sample;
+      if (first < average_ && average_ < last) {
+	rising_sample_count_++;
+	falling_sample_count_ = 0;
+	stable_sample_count_ = 0;
+	//	Serial.print("rising count: ");
+	//	Serial.print(rising_sample_count_);
+	//	if (IsRising())
+	//	  Serial.print(" -- RISING");
+	//	Serial.println("");
+      }
+      else if (last < average_ && average_ < first) {
+	  falling_sample_count_++;
+	  rising_sample_count_ = 0;
+	  stable_sample_count_ = 0;
+	  //	  Serial.print("falling count: ");
+	  //	  Serial.print(falling_sample_count_);
+	  //	  if (IsRising())
+	  //	    Serial.print(" -- FALLING");
+	  //
+	  Serial.println("");
+      }
+      else {
+	stable_sample_count_ = 0;
+	rising_sample_count_ = 0;
+	falling_sample_count_ = 0;
+      }
+    }
   }
 }
 
@@ -82,17 +130,15 @@ bool SlidingDataWindow::IsReady() const {
 }
 
 bool SlidingDataWindow::IsRising() const {
-  // TODO: write me
-  return false;
+  return IsReady() && rising_sample_count_ >= trend_sample_size_;
 }
 
 bool SlidingDataWindow::IsFalling() const {
-  // TODO: write me
-  return false;
+  return IsReady() && falling_sample_count_ >= trend_sample_size_;
 }
 
 bool SlidingDataWindow::IsStable() const {
-  return (IsReady() && standard_deviation_ < stable_size_);
+  return IsReady() && stable_sample_count_ >= trend_sample_size_;
 }
 
 float SlidingDataWindow::Minimum() const {
