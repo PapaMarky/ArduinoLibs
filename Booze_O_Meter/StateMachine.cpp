@@ -156,6 +156,7 @@ State* WarmUpState::loop() {
   static int hue = 0;
 
   void SamplingState::enter_state() {
+    TimedState::enter_state(); // start the timer
     hue = 0;
     s_context->display()->set(hue);
     s_context->led()->set_hsv(hue, 1.0f,  1.0f);
@@ -167,6 +168,14 @@ State* WarmUpState::loop() {
   State* SamplingState::handle_event(mdlib::Event e) {
     static bool fanIsOn = false;
 
+    if (e.event_type == mdlib::Event::TIMER_DONE) {
+      return timeout_next_state_;
+    }
+
+    if (e.event_type == mdlib::Event::BUTTON_CLICK) {
+      return next_state_;
+    }
+    /*
     // Test Fan effect on sensor
     if (e.event_type == mdlib::Event::BUTTON_CLICK) {
       if (fanIsOn) {
@@ -178,7 +187,7 @@ State* WarmUpState::loop() {
 	fanIsOn = true;
       }
     }
-
+    */
     /*
     if (e.event_type == mdlib::Event::BUTTON_CLICK) {
       hue += 5;
@@ -220,6 +229,36 @@ State* WarmUpState::loop() {
     }
 
     return 0;
+  }
+  ///////////////////////// PostSampleState
+
+  void PostSampleState::enter_state() {
+    TimedState::enter_state(); // start timer
+    s_context->fan()->turnOn();
+    s_context->button()->TurnOff();
+  }
+
+  State* PostSampleState::handle_event(mdlib::Event e) {
+    if (e.event_type == mdlib::Event::TIMER_DONE)
+      return timeout_next_state_;
+
+    if (e.event_type == mdlib::Event::BUTTON_CLICK)
+      return next_state_;
+  }
+  ///////////////////////// PostSampleState2
+
+  void PostSample2State::enter_state() {
+    TimedState::enter_state(); // start timer
+    s_context->fan()->turnOff();
+    s_context->button()->TurnOff();
+  }
+
+  State* PostSample2State::handle_event(mdlib::Event e) {
+    if (e.event_type == mdlib::Event::TIMER_DONE)
+      return timeout_next_state_;
+
+    if (e.event_type == mdlib::Event::BUTTON_CLICK)
+      return next_state_;
   }
 
   

@@ -101,9 +101,12 @@ class ReadyState : public TimedState {
 
 };
 
-class SamplingState : public State {
+class SamplingState : public TimedState {
  public:
-  SamplingState() {}
+  SamplingState() {
+    // go to PostSampleState after 10 seconds
+    SetTimeout(10*1000);
+  }
   ~SamplingState() {}
 
   virtual void enter_state();
@@ -117,25 +120,29 @@ class SamplingState : public State {
   int max_sample_;
 };
 
-class PostSampleState : public State {
+class PostSampleState : public TimedState {
  public:
   PostSampleState() {}
   ~PostSampleState() {}
 
+  virtual void enter_state();
+
   virtual State* loop() { return 0;}
-  virtual State* handle_event(mdlib::Event e) { return 0;}
+  virtual State* handle_event(mdlib::Event e);
 
   virtual const char* name() const { return "PostSampleState"; }
  private:
 };
 
-class PostSample2State : public State {
+class PostSample2State : public TimedState {
  public:
   PostSample2State() {}
   ~PostSample2State() {}
 
+  virtual void enter_state();
+
   virtual State* loop() { return 0;}
-  virtual State* handle_event(mdlib::Event e) { return 0;}
+  virtual State* handle_event(mdlib::Event e);
 
   virtual const char* name() const { return "PostSample2State"; }
  private:
