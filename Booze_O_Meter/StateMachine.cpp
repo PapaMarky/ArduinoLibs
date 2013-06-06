@@ -2,13 +2,13 @@
 
 #include "Arduino.h"
 
-#include "StateMachine.h"
-#include "StateContext.h"
 #include "../base/base.h"
 #include "BoozeSensor.h"
 #include "LightedButton.h"
 #include "MultiColorLED.h"
 #include "SevenSegmentDisplay.h"
+#include "StateContext.h"
+#include "StateMachine.h"
 
 namespace mdlib {
   extern const char* event_name(mdlib::Event e);
@@ -160,8 +160,8 @@ State* WarmUpState::loop() {
     hue = 0;
     s_context->display()->set(hue);
     s_context->led()->set_hsv(hue, 1.0f,  1.0f);
+    s_context->sensor()->StartRecording();
 
-    max_sample_ = 0;
     start_sample_ = s_context->sensor()->RawAlcoholValue();
   }
 
@@ -174,6 +174,10 @@ State* WarmUpState::loop() {
 
     if (e.event_type == mdlib::Event::BUTTON_CLICK) {
       return next_state_;
+    }
+
+    if (e.event_type == BoozeSensor::BOOZE_MAX_CHANGED) {
+      UpdateDisplay();
     }
     /*
     // Test Fan effect on sensor
@@ -217,17 +221,17 @@ State* WarmUpState::loop() {
     return (int)( (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min );
   }
 
+  void SamplingState::UpdateDisplay() {
+    int sample = s_context->sensor()->GetMaximum();
+
+    float pct = (float)(sample - start_sample_) / (float)(1023 - start_sample_);
+    int hue = hueMap(pct);
+
+    s_context->led()->set_hsv(hue, 1.0f, 1.0f);
+    s_context->display()->set((int)(pct * 100.0));
+  }
+
   State* SamplingState::loop() {
-    int sample = s_context->sensor()->RawAlcoholValue();
-    if (sample != max_sample_) {
-      max_sample_ = sample;
-      float pct = (float)(sample - start_sample_) / (float)(1023 - start_sample_);
-      int hue = hueMap(pct);
-
-      s_context->led()->set_hsv(hue, 1.0f, 1.0f);
-      s_context->display()->set((int)(pct * 100.0));
-    }
-
     return 0;
   }
   ///////////////////////// PostSampleState

@@ -3,6 +3,7 @@
 #include <Arduino.h>
 
 #include "BoozeSensor.h"
+#include "EventQueue.h"
 
 namespace BOM {
 BoozeSensor::BoozeSensor()
@@ -14,9 +15,15 @@ const float alcohol_sensor_zero = 300;
 const float alcohol_sensor_100 = 1023;
 
 void BoozeSensor::TakeSample() {
-  data_window_.AddSample((float)RawAlcoholValue());
+  int sample = RawAlcoholValue();
+  data_window_.AddSample((float)sample);
   thermistor_window_.AddSample((float)RawThermistor());
   last_sample_time_ = millis();
+
+  if (recording_ && sample > maximum_reading_) {
+    maximum_reading_ = sample;
+    PostEvent(mdlib::Event(BOOZE_MAX_CHANGED, (int)this));
+  }
 
   if (data_window_.IsReady()) {
     if (data_window_.IsRising())

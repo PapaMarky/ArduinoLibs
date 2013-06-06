@@ -8,6 +8,8 @@
 namespace BOM {
 class BoozeSensor {
  public:
+  // event id
+  static const int BOOZE_MAX_CHANGED = 5000;
   BoozeSensor();
 
   void set_pins(int control, int data, int temperature);
@@ -46,6 +48,9 @@ class BoozeSensor {
 
   float DataStdDev() { return data_window_.StandardDeviation(); }
 
+  void StartRecording() { maximum_reading_ = 0; recording_ = true; }
+  void StopRecording() { recording_ = false; }
+  int GetMaximum() { return maximum_reading_; }
  private:
   void TakeSample();
 
@@ -58,6 +63,9 @@ class BoozeSensor {
 
   unsigned int on_time_;
   unsigned int last_sample_time_;
+
+  bool recording_;
+  int maximum_reading_;
 };
 } // namespace BOM
 #endif // BOOZE_SENSOR__

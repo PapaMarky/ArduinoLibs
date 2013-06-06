@@ -116,8 +116,8 @@ class SamplingState : public TimedState {
 
   virtual const char* name() const { return "SamplingState"; }
  private:
+  void UpdateDisplay();
   int start_sample_;
-  int max_sample_;
 };
 
 class PostSampleState : public TimedState {
