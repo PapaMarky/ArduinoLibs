@@ -17,17 +17,42 @@ void BoozeSensor::TakeSample() {
   data_window_.AddSample((float)RawAlcoholValue());
   thermistor_window_.AddSample((float)RawThermistor());
   last_sample_time_ = millis();
+
+  if (data_window_.IsReady()) {
+    if (data_window_.IsRising())
+      Serial.print("Data Rising,  ");
+    else if (data_window_.IsFalling())
+      Serial.print("Data Falling, ");
+    else if (data_window_.IsStable())
+      Serial.print("Data STABLE,  ");
+    else
+      Serial.print("Data ?????,   ");
+
+    if (thermistor_window_.IsRising())
+      Serial.print("Temp Rising:  ");
+    else if (thermistor_window_.IsFalling())
+      Serial.print("Temp Falling: ");
+    else if (thermistor_window_.IsStable())
+      Serial.print("Temp STABLE:  ");
+    else
+      Serial.print("Temp ?????: ");
+
+    Serial.print(thermistor_window_.GetLastSample(),0);
+    Serial.print(" -> ");
+    Serial.println(thermistor_window_.StandardDeviation(), 2);
+    Serial.println("----------------");
+  }
 }
 
-void BoozeSensor::turnOn() {
-  control_.turnOn();
+void BoozeSensor::TurnOn() {
+  control_.TurnOn();
   on_time_ = millis();
   data_window_.Reset();
   thermistor_window_.Reset();
 }
 
-void BoozeSensor::turnOff() {
-  control_.turnOff();
+void BoozeSensor::TurnOff() {
+  control_.TurnOff();
 }
 
 void BoozeSensor::update() {

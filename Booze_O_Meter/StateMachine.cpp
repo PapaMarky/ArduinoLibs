@@ -30,15 +30,15 @@ void StartUpState::enter_state() {
   State::enter_state();
 
   s_context->led()->set_color(mdlib::WHITE);
-  s_context->fan()->turnOn();
-  s_context->sensor()->turnOn();
+  s_context->fan()->TurnOn();
+  s_context->sensor()->TurnOn();
   s_context->button()->TurnOn();
   s_context->display()->set(8888);
 }
 
 void StartUpState::leave_state() {
   s_context->led()->set_color(mdlib::BLACK);
-  s_context->fan()->turnOff();
+  s_context->fan()->TurnOff();
   s_context->button()->TurnOff();
 }
 
@@ -60,8 +60,8 @@ State* StartUpState::handle_event(mdlib::Event e) {
 /////// WarmUpState
 void WarmUpState::enter_state() {
   State::enter_state();
-  s_context->sensor()->turnOn();
-  s_context->fan()->turnOff();
+  s_context->sensor()->TurnOn();
+  s_context->fan()->TurnOff();
   s_context->button()->TurnOff();
   s_context->display()->clear();
   display_value_ = -10.0;
@@ -107,11 +107,11 @@ State* WarmUpState::loop() {
   void ReadyState::enter_state() {
     TimedState::enter_state();
 
-    s_context->sensor()->turnOff();
-    s_context->sensor()->turnOn();
+    s_context->sensor()->TurnOff();
+    s_context->sensor()->TurnOn();
     s_context->button()->TurnOff();
     s_context->display()->clear();
-    s_context->fan()->turnOff();
+    s_context->fan()->TurnOff();
     s_context->led()->TurnOff();
   }
 
@@ -179,11 +179,11 @@ State* WarmUpState::loop() {
     // Test Fan effect on sensor
     if (e.event_type == mdlib::Event::BUTTON_CLICK) {
       if (fanIsOn) {
-	s_context->fan()->turnOff();
+	s_context->fan()->TurnOff();
 	fanIsOn = false;
 	start_sample_ = s_context->sensor()->RawAlcoholValue();
       } else {
-	s_context->fan()->turnOn();
+	s_context->fan()->TurnOn();
 	fanIsOn = true;
       }
     }
@@ -234,7 +234,7 @@ State* WarmUpState::loop() {
 
   void PostSampleState::enter_state() {
     TimedState::enter_state(); // start timer
-    s_context->fan()->turnOn();
+    s_context->fan()->TurnOn();
     s_context->button()->TurnOff();
   }
 
@@ -249,7 +249,7 @@ State* WarmUpState::loop() {
 
   void PostSample2State::enter_state() {
     TimedState::enter_state(); // start timer
-    s_context->fan()->turnOff();
+    s_context->fan()->TurnOff();
     s_context->button()->TurnOff();
   }
 

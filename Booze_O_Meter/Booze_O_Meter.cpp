@@ -125,9 +125,9 @@ void Booze_O_Meter::calibration_loop() {
       changed = true;
 
       if (context_.sensor()->isOn())
-	context_.sensor()->turnOff();
+	context_.sensor()->TurnOff();
       else
-	context_.sensor()->turnOn();
+	context_.sensor()->TurnOn();
     }
   }
 

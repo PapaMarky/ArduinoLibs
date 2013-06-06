@@ -68,8 +68,8 @@ namespace mdlib {
       }
     }
 
-    void turnOn()  { set_state(true); }
-    void turnOff() { set_state(false); }
+    void TurnOn()  { set_state(true); }
+    void TurnOff() { set_state(false); }
 
     bool getState() const { return state_; }
     
