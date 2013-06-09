@@ -3,6 +3,7 @@
 #include <Arduino.h>
 
 #include "BoozeSensor.h"
+#include "EventQueue.h"
 
 namespace BOM {
 BoozeSensor::BoozeSensor()
@@ -14,36 +15,66 @@ const float alcohol_sensor_zero = 300;
 const float alcohol_sensor_100 = 1023;
 
 void BoozeSensor::TakeSample() {
-  data_window_.AddSample((float)RawAlcoholValue());
+  int sample = RawAlcoholValue();
+  data_window_.AddSample((float)sample);
   thermistor_window_.AddSample((float)RawThermistor());
   last_sample_time_ = millis();
+
+  if (recording_ && sample > maximum_reading_) {
+    maximum_reading_ = sample;
+    PostEvent(mdlib::Event(BOOZE_MAX_CHANGED, (int)this));
+#if 0 // turn off debugging
+    Serial.print("NEW MAX: ");
+    Serial.println(maximum_reading_);
+#endif 
+  }
+#if 0 // turn off debugging
+  if (false && data_window_.IsReady()) {
+    Serial.print("Data ");
+    Serial.print(data_window_.GetLastSample());
+    if (data_window_.IsRising())
+      Serial.print(" Rising,  ");
+    else if (data_window_.IsFalling())
+      Serial.print(" Falling, ");
+    else if (data_window_.IsStable())
+      Serial.print(" STABLE,  ");
+    else
+      Serial.print(" ?????,   ");
+
+    Serial.print("Temp ");
+    Serial.print(thermistor_window_.GetLastSample());
+    if (thermistor_window_.IsRising())
+      Serial.print(" Rising:  ");
+    else if (thermistor_window_.IsFalling())
+      Serial.print(" Falling: ");
+    else if (thermistor_window_.IsStable())
+      Serial.print(" STABLE:  ");
+    else
+      Serial.print(" ?????: ");
+
+    Serial.print(" -> ");
+    Serial.println(thermistor_window_.StandardDeviation(), 2);
+    Serial.println("----------------");
+  }
+#endif
 }
 
-void BoozeSensor::turnOn() {
-  control_.turnOn();
+void BoozeSensor::TurnOn() {
+  control_.TurnOn();
   on_time_ = millis();
   data_window_.Reset();
   thermistor_window_.Reset();
-  TakeSample();
 }
 
-void BoozeSensor::turnOff() {
-  control_.turnOff();
+void BoozeSensor::TurnOff() {
+  control_.TurnOff();
 }
 
 void BoozeSensor::update() {
-  if (isOn()) {
+  if (IsOn()) {
     unsigned int elapsed = millis() - last_sample_time_;
-    if (elapsed >= 400) {
+    if (elapsed >= 400)
       TakeSample();
-
-      if (data_window_.IsReady()) {
-	Serial.print("DATA: ");
-	data_window_.Dump();
-	Serial.print("TEMP: ");
-	thermistor_window_.Dump();
-      }
-    }
   }
 }
   

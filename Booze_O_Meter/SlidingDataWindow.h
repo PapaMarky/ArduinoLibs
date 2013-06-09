@@ -26,6 +26,19 @@ class SlidingDataWindow {
   // The default value is 1.0
   void SetStableSize(float size);
 
+  // Trends of the sample window such as 'stable', 'rising' and 'falling' 
+  // require the 'trend' to be in effect for trend_sample_size_ samples.
+  // In other words, a single 'stable' sample, will not cause the SlidingDataWindow
+  // to return true for IsStable. We count how many stable samples we have, and
+  // only report is stable if at least trend_sample_size_ samples have been
+  // stable.
+  // EX: If you are sampling at a rate of 5 samples per second, and you want the
+  // data to be stable (or rising, or falling) for at least a second before seeing it
+  // as stable, call SetTrendSampleSize(5)
+  void SetTrendSampleSize(int size) {
+    trend_sample_size_ = size;
+  }
+
   // clears all accumulated samples and statistics. Use this when you stop
   // sampling for awhile and are ready to resume.
   void Reset();
@@ -50,17 +63,26 @@ class SlidingDataWindow {
 
   void Dump();
 
+  float GetFirstSample() { return data_[next_]; }
+  float GetLastSample() {
+    return data_[(next_ == 0 ? window_size_ - 1 : next_)];
+  }
+
  private:
-  static const int POOL_SIZE = 100;
+  static const int POOL_SIZE = 25;
   int window_size_;
   float stable_size_;
-  float* data_;
+  float data_[25];
   float minimum_;
   float maximum_;
   float average_;
   float standard_deviation_;
   int next_;
   int count_;
+  int trend_sample_size_;
+  int stable_sample_count_;
+  int rising_sample_count_;
+  int falling_sample_count_;
 };
 
 } // namespace mdlib

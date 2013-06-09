@@ -8,15 +8,25 @@
 namespace BOM {
 class BoozeSensor {
  public:
+  // event id
+  static const int BOOZE_MAX_CHANGED = 5000;
   BoozeSensor();
 
   void set_pins(int control, int data, int temperature);
 
-  void turnOn();
-  void turnOff();
+  void TurnOn();
+  void TurnOff();
 
-  bool isOn() const { return control_.getState(); }
-  
+  bool IsOn() const { return control_.getState(); }
+
+  bool IsReady() const {
+    return IsOn() && data_window_.IsStable() && thermistor_window_.IsStable();
+  }
+
+  bool IsRising() const {
+    return IsOn() && data_window_.IsRising();
+  }
+
   void set_state(bool b) { control_.set_state(b); }
 
   int getTemperature() const;
@@ -31,15 +41,20 @@ class BoozeSensor {
     control_.setup();
     data_.setup();
     thermistor_.setup();
-    data_window_.SetWindowSize(25);
-    data_window_.SetStableSize(0.01);
-    thermistor_window_.SetWindowSize(25);
-    thermistor_window_.SetStableSize(0.01);
+    data_window_.SetStableSize(0.8);
+    data_window_.SetTrendSampleSize(5);
+    thermistor_window_.SetStableSize(1.5);
+    thermistor_window_.SetTrendSampleSize(5);
   }
 
   float CalculateAlcoholPercent() const;
   int RawAlcoholValue() const { return data_.read(); }
-  
+
+  float DataStdDev() { return data_window_.StandardDeviation(); }
+
+  void StartRecording() { maximum_reading_ = 0; recording_ = true; }
+  void StopRecording() { recording_ = false; }
+  int GetMaximum() { return maximum_reading_; }
  private:
   void TakeSample();
 
@@ -52,6 +67,9 @@ class BoozeSensor {
 
   unsigned int on_time_;
   unsigned int last_sample_time_;
+
+  bool recording_;
+  int maximum_reading_;
 };
 } // namespace BOM
 #endif // BOOZE_SENSOR__

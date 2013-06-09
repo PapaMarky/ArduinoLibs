@@ -24,6 +24,8 @@ namespace mdlib {
     void set_pins(int red_pin, int green_pin, int blue_pin);
     void set_color(uint32_t color) const;
 
+    void TurnOff() { set_color(0); }
+
     void blend_colors(uint32_t c1, uint32_t c2, float pct) const;
 
     void set_hsv(int h, float s, float v);

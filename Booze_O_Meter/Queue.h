@@ -41,6 +41,9 @@ namespace mdlib {
       if (length() > 0) {
 	item = data_[front_];
 	front_++;
+	if (front_ >= capacity_)
+	  front_ = 0;
+
 	length_--;
       }
       return item;
