@@ -23,32 +23,40 @@ void BoozeSensor::TakeSample() {
   if (recording_ && sample > maximum_reading_) {
     maximum_reading_ = sample;
     PostEvent(mdlib::Event(BOOZE_MAX_CHANGED, (int)this));
+#if 0 // turn off debugging
+    Serial.print("NEW MAX: ");
+    Serial.println(maximum_reading_);
+#endif 
   }
-
-  if (data_window_.IsReady()) {
+#if 0 // turn off debugging
+  if (false && data_window_.IsReady()) {
+    Serial.print("Data ");
+    Serial.print(data_window_.GetLastSample());
     if (data_window_.IsRising())
-      Serial.print("Data Rising,  ");
+      Serial.print(" Rising,  ");
     else if (data_window_.IsFalling())
-      Serial.print("Data Falling, ");
+      Serial.print(" Falling, ");
     else if (data_window_.IsStable())
-      Serial.print("Data STABLE,  ");
+      Serial.print(" STABLE,  ");
     else
-      Serial.print("Data ?????,   ");
+      Serial.print(" ?????,   ");
 
+    Serial.print("Temp ");
+    Serial.print(thermistor_window_.GetLastSample());
     if (thermistor_window_.IsRising())
-      Serial.print("Temp Rising:  ");
+      Serial.print(" Rising:  ");
     else if (thermistor_window_.IsFalling())
-      Serial.print("Temp Falling: ");
+      Serial.print(" Falling: ");
     else if (thermistor_window_.IsStable())
-      Serial.print("Temp STABLE:  ");
+      Serial.print(" STABLE:  ");
     else
-      Serial.print("Temp ?????: ");
+      Serial.print(" ?????: ");
 
-    Serial.print(thermistor_window_.GetLastSample(),0);
     Serial.print(" -> ");
     Serial.println(thermistor_window_.StandardDeviation(), 2);
     Serial.println("----------------");
   }
+#endif
 }
 
 void BoozeSensor::TurnOn() {

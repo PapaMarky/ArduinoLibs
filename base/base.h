@@ -71,6 +71,8 @@ namespace mdlib {
     void TurnOn()  { set_state(true); }
     void TurnOff() { set_state(false); }
 
+    bool IsOn() { return state_; }
+
     bool getState() const { return state_; }
     
   private:

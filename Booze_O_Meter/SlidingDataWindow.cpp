@@ -109,12 +109,6 @@ void SlidingDataWindow::AddSample(float sample) {
 	  falling_sample_count_++;
 	  rising_sample_count_ = 0;
 	  stable_sample_count_ = 0;
-	  //	  Serial.print("falling count: ");
-	  //	  Serial.print(falling_sample_count_);
-	  //	  if (IsRising())
-	  //	    Serial.print(" -- FALLING");
-	  //
-	  Serial.println("");
       }
       else {
 	stable_sample_count_ = 0;

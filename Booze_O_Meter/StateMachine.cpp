@@ -1,7 +1,7 @@
 // Copyright (c) 2013 Mark Dyer. All rights reserved.
 
-#include "Arduino.h"
-
+#include <Arduino.h>
+#include <Narcoleptic.h>
 #include "../base/base.h"
 #include "BoozeSensor.h"
 #include "LightedButton.h"
@@ -15,11 +15,10 @@ namespace mdlib {
 }
 
 namespace BOM {
-
 StateContext* State::s_context = 0;
 
 void State::enter_state() {
-  start_time_ = millis();
+  SetStartTime();
 }
 
 ////////////////////////////////////////////////////////////////////
@@ -27,13 +26,16 @@ void State::enter_state() {
 ////////////////////////////////////////////////////////////////////
 
 void StartUpState::enter_state() {
-  State::enter_state();
+  SetStartTime();
 
   s_context->led()->set_color(mdlib::WHITE);
   s_context->fan()->TurnOn();
   s_context->sensor()->TurnOn();
   s_context->button()->TurnOn();
+  s_context->display()->Reset();
+  s_context->display()->SetBrightness(254);
   s_context->display()->set(8888);
+  
 }
 
 void StartUpState::leave_state() {
@@ -59,15 +61,22 @@ State* StartUpState::handle_event(mdlib::Event e) {
 
 /////// WarmUpState
 void WarmUpState::enter_state() {
-  State::enter_state();
+  SetStartTime();
   s_context->sensor()->TurnOn();
   s_context->fan()->TurnOff();
+  s_context->button()->SetBrightness(0.5);
   s_context->button()->TurnOff();
   s_context->display()->clear();
-  display_value_ = -10.0;
+  s_context->display()->SetBrightness(245);
+  display_value_ = 0.0;
   pulse_start_ = millis();
 }
 
+void WarmUpState::leave_state() {
+  // the user may have double clicked the button and turned the fan on,
+  // make sure it is off
+  s_context->fan()->TurnOff();
+}
 
 State* WarmUpState::loop() {
   const unsigned long PULSE_TIME = 450;
@@ -101,18 +110,29 @@ State* WarmUpState::loop() {
 
   return (State*)0;
 }
-
+  State* WarmUpState::handle_event(mdlib::Event e) {
+    if (e.event_type == mdlib::Event::BUTTON_DOUBLE_CLICK) {
+      if (s_context->fan()->IsOn())
+	s_context->fan()->TurnOff();
+      else
+	s_context->fan()->TurnOn();
+    }
+    return 0;
+  }
 /////////////////// ReadyState
 
   void ReadyState::enter_state() {
-    TimedState::enter_state();
+    SetStartTime();
+    StartTimer();
 
     s_context->sensor()->TurnOff();
     s_context->sensor()->TurnOn();
+    s_context->button()->SetBrightness(0.5);
     s_context->button()->TurnOff();
     s_context->display()->clear();
+    s_context->display()->SetBrightness(250);
     s_context->fan()->TurnOff();
-    s_context->led()->TurnOff();
+    s_context->led()->set_hsv(120, 1.0, 0.1);
   }
 
   void ReadyState::leave_state() {
@@ -120,9 +140,9 @@ State* WarmUpState::loop() {
   }
 
   State* ReadyState::loop() {
-    unsigned long elapsed = millis() - start_time_;
     UpdateTimer();
-
+    unsigned long elapsed = millis() - start_time_;
+    
     // make the button blink
     float secs =  floor((float)elapsed/1000.0f);
     if( (int)secs % 2) {
@@ -135,13 +155,30 @@ State* WarmUpState::loop() {
     else
       s_context->button()->TurnOff();
 
+    // count down display
+    static unsigned long t = 999999;
+    float time_left = timer_.GetSecondsRemaining();
+    if ((int)time_left != t) {
+      t = time_left;
+      s_context->display()->SetSeconds(t);
+    }
+#if 0
+    // Make the led Pulse green
+
+    static int rise_count = 0;
+    if (s_context->sensor()->IsRising()) {
+      rise_count++;
+      if (rise_count > 5)
+	return next_state_;
+    }
+    else
+      rise_count = 0;
+#endif 
     return (State*)0;
   }
 
   State* ReadyState::handle_event(mdlib::Event e) {
     // advance to sampling if button clicked
-    Serial.print("Got event: ");
-    Serial.println(event_name(e));
     if (e.event_type == mdlib::Event::BUTTON_CLICK) {
       return next_state_;
     }
@@ -156,13 +193,20 @@ State* WarmUpState::loop() {
   static int hue = 0;
 
   void SamplingState::enter_state() {
-    TimedState::enter_state(); // start the timer
+    SetStartTime();
+    StartTimer();
     hue = 0;
+    s_context->display()->clear();
     s_context->display()->set(hue);
+    s_context->display()->SetBrightness(254);
     s_context->led()->set_hsv(hue, 1.0f,  1.0f);
     s_context->sensor()->StartRecording();
 
     start_sample_ = s_context->sensor()->RawAlcoholValue();
+  }
+
+  void SamplingState::leave_state() {
+    StopTimer();
   }
 
   State* SamplingState::handle_event(mdlib::Event e) {
@@ -178,45 +222,29 @@ State* WarmUpState::loop() {
 
     if (e.event_type == BoozeSensor::BOOZE_MAX_CHANGED) {
       UpdateDisplay();
+      StartTimer();
+      // If we peg the meter, might as well move along
+      if (s_context->sensor()->GetMaximum() == 1023)
+        return next_state_;
     }
-    /*
-    // Test Fan effect on sensor
-    if (e.event_type == mdlib::Event::BUTTON_CLICK) {
-      if (fanIsOn) {
-	s_context->fan()->TurnOff();
-	fanIsOn = false;
-	start_sample_ = s_context->sensor()->RawAlcoholValue();
-      } else {
-	s_context->fan()->TurnOn();
-	fanIsOn = true;
-      }
-    }
-    */
-    /*
-    if (e.event_type == mdlib::Event::BUTTON_CLICK) {
-      hue += 5;
-      if (hue >= 360)
-	hue = 0;
-
-      // 0 -> 90 (120)
-      // Red -> Green
-      s_context->display()->set(hue);
-      s_context->led()->set_hsv(hue, 1.0f,  1.0f);
-    }
-    */
     return 0;
   }
 
   int hueMap(float x) {
-    float in_min = 0.10;
-    float in_max = 0.75;
-    if (x <= in_min)
-      return 90;
-    if (x >= in_max)
-      return 0;
+    const int GREEN = 120;
+    const int RED = 0;
+    
+    float in_min = 0.25; // below 25% is green
+    float in_max = 0.90; // above 90% is red
 
-    float out_min = 120.0;
-    float out_max = 0.0;
+    float out_min = GREEN; // 
+    float out_max = RED;
+
+    if (x <= in_min)
+      return (int)out_min;
+    
+    if (x >= in_max)
+      return (int)out_max;
 
     return (int)( (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min );
   }
@@ -232,14 +260,21 @@ State* WarmUpState::loop() {
   }
 
   State* SamplingState::loop() {
+    UpdateTimer();
     return 0;
   }
   ///////////////////////// PostSampleState
 
   void PostSampleState::enter_state() {
-    TimedState::enter_state(); // start timer
+    SetStartTime();
+    StartTimer();
+    s_context->display()->SetBrightness(254);
     s_context->fan()->TurnOn();
     s_context->button()->TurnOff();
+  }
+
+  void PostSampleState::leave_state() {
+    StopTimer();
   }
 
   State* PostSampleState::handle_event(mdlib::Event e) {
@@ -249,12 +284,24 @@ State* WarmUpState::loop() {
     if (e.event_type == mdlib::Event::BUTTON_CLICK)
       return next_state_;
   }
+
+  State* PostSampleState::loop() {
+    // blink the display
+    UpdateTimer();
+  }
+
   ///////////////////////// PostSampleState2
 
   void PostSample2State::enter_state() {
-    TimedState::enter_state(); // start timer
+    SetStartTime();
+    StartTimer();
+    s_context->display()->SetBrightness(254);
     s_context->fan()->TurnOff();
     s_context->button()->TurnOff();
+  }
+
+  void PostSample2State::leave_state() {
+    StopTimer();
   }
 
   State* PostSample2State::handle_event(mdlib::Event e) {
@@ -265,5 +312,80 @@ State* WarmUpState::loop() {
       return next_state_;
   }
 
-  
+  ///////////////// PowerSaverState
+
+  void PowerSaverState::enter_state() {
+    SetStartTime();
+    StartTimer();
+    
+    s_context->fan()->TurnOff();
+
+    s_context->led()->set_hsv(120, 1.0, 0.005);
+    s_context->button()->SetBrightness(0.5);
+    s_context->display()->SetBrightness(200);
+  }
+
+  void PowerSaverState::leave_state() {
+    StopTimer();
+  }
+
+  State* PowerSaverState::handle_event(mdlib::Event e) {
+    if (e.event_type == mdlib::Event::BUTTON_CLICK)
+      return next_state_;
+
+    if (e.event_type == mdlib::Event::TIMER_DONE)
+      return timeout_next_state_;
+  }
+
+  // LOOP
+  // blink the button and led dimmer & with longer off cycle
+  State* PowerSaverState::loop() {
+    UpdateTimer();
+    unsigned long elapsed = millis() - start_time_;
+    // make the button blink
+    float secs =  floor((float)elapsed/2000.0f);
+    if( (int)secs % 2) {
+      float fraction = (float)elapsed/2000.0f - secs;
+      if (fraction < 0.05)
+	s_context->button()->TurnOn();
+      else
+	s_context->button()->TurnOff();
+    }
+    else
+      s_context->button()->TurnOff();
+
+    // count down display
+    static int t = 999999;
+    float time_left = timer_.GetSecondsRemaining();
+
+    if ((int)time_left != t) {
+      t = time_left;
+      s_context->display()->SetSeconds(t);
+    }
+    
+    return 0;
+  }
+///////////////////////// SleepState
+
+  void SleepState::enter_state() {
+    s_context->led()->TurnOff();
+    s_context->button()->TurnOff();
+    s_context->sensor()->TurnOff();
+    s_context->display()->clear();
+    s_context->display()->set("    ");
+  }
+
+  State* SleepState::handle_event(mdlib::Event e) {
+    if (e.event_type == mdlib::Event::BUTTON_CLICK ||
+	e.event_type == mdlib::Event::BUTTON_LONG_CLICK ||
+	e.event_type == mdlib::Event::BUTTON_DOWN	||
+	e.event_type == mdlib::Event::BUTTON_UP	)
+      return next_state_;
+  }
+
+  State* SleepState::loop() {
+    Narcoleptic.delay(2000);
+    return 0;
+  }
 } // namespace BOM
+

@@ -22,7 +22,11 @@ class BoozeSensor {
   bool IsReady() const {
     return IsOn() && data_window_.IsStable() && thermistor_window_.IsStable();
   }
-  
+
+  bool IsRising() const {
+    return IsOn() && data_window_.IsRising();
+  }
+
   void set_state(bool b) { control_.set_state(b); }
 
   int getTemperature() const;
@@ -39,7 +43,7 @@ class BoozeSensor {
     thermistor_.setup();
     data_window_.SetStableSize(0.8);
     data_window_.SetTrendSampleSize(5);
-    thermistor_window_.SetStableSize(4.0);
+    thermistor_window_.SetStableSize(1.5);
     thermistor_window_.SetTrendSampleSize(5);
   }
 

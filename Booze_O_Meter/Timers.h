@@ -24,6 +24,14 @@ namespace mdlib {
 
     bool is_running() { return is_running_; }
 
+    float GetSecondsRemaining() {
+      float remaining = 0.0;
+      if (is_running_) {
+	unsigned long elapsed = millis() - start_millis_;
+	remaining = (float)(duration_ - elapsed)/1000.0;
+      }
+      return remaining;
+    }
   private:
     bool is_running_;
     unsigned long start_millis_;

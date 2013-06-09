@@ -31,6 +31,8 @@ class State {
   unsigned long start_time_;
   State* next_state_;
   State* timeout_next_state_;
+
+  void SetStartTime() { start_time_ = millis(); }
 };
 
 class TimedState : public State {
@@ -47,8 +49,10 @@ class TimedState : public State {
   void SetTimeout(unsigned long t) { timeout_ = t; }
   void UpdateTimer() { timer_.update(); }
 
- private:
+ protected:
   mdlib::CountdownTimer timer_;
+
+ private:
   unsigned long timeout_;
 };
  
@@ -75,9 +79,10 @@ class WarmUpState : public State {
   ~WarmUpState() {}
 
   virtual void enter_state();
+  virtual void leave_state();
 
   virtual State* loop();
-  virtual State* handle_event(mdlib::Event e) {return 0;}
+  virtual State* handle_event(mdlib::Event e);
 
   virtual const char* name() const { return "WarmUpState"; }
  private:
@@ -87,7 +92,7 @@ class WarmUpState : public State {
 
 class ReadyState : public TimedState {
  public:
-  ReadyState() { SetTimeout(3*60*1000); }
+  ReadyState() { SetTimeout(3L * 60L * 1000L); }
   ~ReadyState() {}
   
   virtual void enter_state();
@@ -105,11 +110,12 @@ class SamplingState : public TimedState {
  public:
   SamplingState() {
     // go to PostSampleState after 10 seconds
-    SetTimeout(10*1000);
+    SetTimeout(10L*1000L);
   }
   ~SamplingState() {}
 
   virtual void enter_state();
+  virtual void leave_state();
 
   virtual State* loop();
   virtual State* handle_event(mdlib::Event e);
@@ -122,12 +128,13 @@ class SamplingState : public TimedState {
 
 class PostSampleState : public TimedState {
  public:
-  PostSampleState() {}
+  PostSampleState() { SetTimeout(60L*1000L); }
   ~PostSampleState() {}
 
   virtual void enter_state();
+  virtual void leave_state();
 
-  virtual State* loop() { return 0;}
+  virtual State* loop();
   virtual State* handle_event(mdlib::Event e);
 
   virtual const char* name() const { return "PostSampleState"; }
@@ -136,15 +143,16 @@ class PostSampleState : public TimedState {
 
 class PostSample2State : public TimedState {
  public:
-  PostSample2State() {}
+  PostSample2State() { SetTimeout(60L*1000L); }
   ~PostSample2State() {}
 
   virtual void enter_state();
+  virtual void leave_state();
 
   virtual State* loop() { return 0;}
   virtual State* handle_event(mdlib::Event e);
 
-  virtual const char* name() const { return "PostSample2State"; }
+  virtual const char* name() const { return "PostSampleState 2"; }
  private:
 };
 
@@ -153,20 +161,25 @@ class SleepState : public State {
   SleepState() {}
   ~SleepState() {}
 
-  virtual State* loop() { return 0;}
-  virtual State* handle_event(mdlib::Event e) { return 0;}
+  virtual void enter_state();
+
+  virtual State* loop();
+  virtual State* handle_event(mdlib::Event e);
 
   virtual const char* name() const { return "SleepState"; }
  private:
 };
 
-class PowerSaverState : public State {
+class PowerSaverState : public TimedState {
  public:
-  PowerSaverState() {}
+  PowerSaverState() { SetTimeout(20L * 60L * 1000L); }
   ~PowerSaverState() {}
 
-  virtual State* loop() { return 0;}
-  virtual State* handle_event(mdlib::Event e) { return 0;}
+  virtual void enter_state();
+  virtual void leave_state();
+  
+  virtual State* loop();
+  virtual State* handle_event(mdlib::Event e);
 
   virtual const char* name() const { return "PowerSaverState"; }
  private:
