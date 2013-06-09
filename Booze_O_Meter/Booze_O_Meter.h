@@ -53,7 +53,7 @@ class Booze_O_Meter {
   static ReadyState READY;
   static SamplingState SAMPLING;
   static PostSampleState POST_SAMPLE;
-  static PostSample2State POST_SAMPLE2;
+  static PostSample2State POST_SAMPLE_2;
   static SleepState SLEEP;
   static PowerSaverState POWER_SAVER;
 
@@ -68,10 +68,11 @@ class Booze_O_Meter {
     state_ = state;
     state_start_millis_ = millis();
     state_->enter_state();
-
+#if 0
     Serial.print("set_state(\"");
     Serial.print(state_->name());
     Serial.println("\")");
+#endif
   }
   State* state_;
   unsigned long state_start_millis_;
