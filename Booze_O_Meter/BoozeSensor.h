@@ -43,7 +43,7 @@ class BoozeSensor {
     thermistor_.setup();
     data_window_.SetStableSize(0.8);
     data_window_.SetTrendSampleSize(5);
-    thermistor_window_.SetStableSize(1.5);
+    thermistor_window_.SetStableSize(0.8);
     thermistor_window_.SetTrendSampleSize(5);
   }
 
@@ -51,10 +51,36 @@ class BoozeSensor {
   int RawAlcoholValue() const { return data_.read(); }
 
   float DataStdDev() { return data_window_.StandardDeviation(); }
+  float TempStdDev() { return thermistor_window_.StandardDeviation(); }
 
   void StartRecording() { maximum_reading_ = 0; recording_ = true; }
   void StopRecording() { recording_ = false; }
   int GetMaximum() { return maximum_reading_; }
+
+  enum DataTrend {
+    DATA_NOT_READY,
+    DATA_RISING,
+    DATA_STABLE,
+    DATA_FALLING,
+    DATA_UNSTABLE
+  };
+
+  DataTrend GetAlcoholTrend() {
+    if (!data_window_.IsReady()) return DATA_NOT_READY;
+    if (data_window_.IsRising()) return DATA_RISING;
+    if (data_window_.IsFalling()) return DATA_FALLING;
+    if (data_window_.IsStable()) return DATA_STABLE;
+    return DATA_UNSTABLE;
+  }
+
+  DataTrend GetTemperatureTrend() {
+    if (!thermistor_window_.IsReady()) return DATA_NOT_READY;
+    if (thermistor_window_.IsRising()) return DATA_RISING;
+    if (thermistor_window_.IsFalling()) return DATA_FALLING;
+    if (thermistor_window_.IsStable()) return DATA_STABLE;
+    return DATA_UNSTABLE;
+  }
+
  private:
   void TakeSample();
 

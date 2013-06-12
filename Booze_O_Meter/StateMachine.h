@@ -75,7 +75,7 @@ class StartUpState : public State {
 
 class WarmUpState : public State {
  public:
-  WarmUpState() {}
+ WarmUpState() : display_mode_(GRAPHIC) {}
   ~WarmUpState() {}
 
   virtual void enter_state();
@@ -85,8 +85,27 @@ class WarmUpState : public State {
   virtual State* handle_event(mdlib::Event e);
 
   virtual const char* name() const { return "WarmUpState"; }
+
  private:
+  void RotateDisplayMode();
+  void UpdateGraphicDisplay();
+  
+  enum DisplayMode {
+    GRAPHIC,
+    ALCOHOL_STDDEV,
+    THERMISTOR_STDDEV,
+    ALCOHOL_VALUE,
+    THERMISTOR_VALUE
+  };
+
+  DisplayMode display_mode_;
+
+  // BoozeSensor::DataTrend
+  int alcohol_trend_;
+  int temperature_trend_;
+ 
   float display_value_;
+  
   unsigned long pulse_start_;
 };
 
