@@ -56,6 +56,11 @@ namespace mdlib {
 //  v is value, double between 0 and 1
 //http://splinter.com.au/blog/?p=29
   void MultiColorLED::set_hsv(int h, float s, float v) {
+#if 0
+    Serial.print("set_hsv(");
+    Serial.print(h);
+    Serial.println(")");
+#endif
     //this is the algorithm to convert from RGB to HSV
     float r=0; 
     float g=0; 

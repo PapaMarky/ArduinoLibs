@@ -17,6 +17,8 @@ namespace mdlib {
 namespace BOM {
 StateContext* State::s_context = 0;
 
+  const float DISPLAY_NORMAL = 1.0;
+  const float DISPLAY_DIM = 0.8;
 void State::enter_state() {
   SetStartTime();
 }
@@ -33,7 +35,7 @@ void StartUpState::enter_state() {
   s_context->sensor()->TurnOn();
   s_context->button()->TurnOn();
   s_context->display()->Reset();
-  s_context->display()->SetBrightness(254);
+  s_context->display()->SetBrightness(DISPLAY_NORMAL);
   s_context->display()->set(8888);
   
 }
@@ -50,7 +52,23 @@ State* StartUpState::loop() {
   if (elapsed >= DURATION)
     return next_state_;
 
+  int b = (elapsed / 333) % 3;
+
+  switch (b) {
+  case 0:
+    s_context->button()->SetBrightness(0.33);
+    break;
+  case 1:
+    s_context->button()->SetBrightness(0.66);
+    break;
+  case 2:
+    s_context->button()->SetBrightness(1.00);
+    break;
+  }
+  
   int h = (int)(360.0f * (float)elapsed / (float)DURATION);
+  while (h > 360) h -= 360;
+  while (h < 0) h += 360;
   s_context->led()->set_hsv(h, 1.0f, 1.0f);
   return (State*)0;
 }
@@ -67,7 +85,7 @@ void WarmUpState::enter_state() {
   s_context->button()->SetBrightness(0.5);
   s_context->button()->TurnOff();
   s_context->display()->clear();
-  s_context->display()->SetBrightness(245);
+  s_context->display()->SetBrightness(DISPLAY_NORMAL);
   display_value_ = 0.0;
   pulse_start_ = millis();
 }
@@ -76,6 +94,7 @@ void WarmUpState::leave_state() {
   // the user may have double clicked the button and turned the fan on,
   // make sure it is off
   s_context->fan()->TurnOff();
+  Serial.println("Leaving WarmUpState");
 }
 
 State* WarmUpState::loop() {
@@ -270,7 +289,7 @@ void WarmUpState::RotateDisplayMode() {
     s_context->button()->SetBrightness(0.5);
     s_context->button()->TurnOff();
     s_context->display()->clear();
-    s_context->display()->SetBrightness(250);
+    s_context->display()->SetBrightness(DISPLAY_NORMAL);
     s_context->fan()->TurnOff();
     s_context->led()->set_hsv(120, 1.0, 0.1);
   }
@@ -335,10 +354,10 @@ void WarmUpState::RotateDisplayMode() {
   void SamplingState::enter_state() {
     SetStartTime();
     StartTimer();
-    hue = 0;
+    hue = 120;
     s_context->display()->clear();
-    s_context->display()->set(hue);
-    s_context->display()->SetBrightness(254);
+    s_context->display()->set(1.0);
+    s_context->display()->SetBrightness(DISPLAY_NORMAL);
     s_context->led()->set_hsv(hue, 1.0f,  1.0f);
     s_context->sensor()->StartRecording();
 
@@ -406,9 +425,11 @@ void WarmUpState::RotateDisplayMode() {
   ///////////////////////// PostSampleState
 
   void PostSampleState::enter_state() {
+    Serial.print("ENTERING ");
+    Serial.println(name());
     SetStartTime();
     StartTimer();
-    s_context->display()->SetBrightness(254);
+    s_context->display()->SetBrightness(DISPLAY_NORMAL);
     s_context->fan()->TurnOn();
     s_context->button()->TurnOff();
   }
@@ -423,11 +444,32 @@ void WarmUpState::RotateDisplayMode() {
 
     if (e.event_type == mdlib::Event::BUTTON_CLICK)
       return next_state_;
+
+    return 0;
   }
 
   State* PostSampleState::loop() {
     // blink the display
+    unsigned long elapsed = millis() - start_time_;
+    static bool display_on = false;
+    if (elapsed < 2000) {
+      bool on = ((elapsed / 200) % 2) == 0;
+
+      if (on != display_on) {
+	display_on = on;
+	Serial.print(" - ON: ");
+	Serial.println(on);
+	s_context->display()->SetBrightness( on ? DISPLAY_NORMAL : 0.0);
+      }
+    }
+    else if (!display_on) {
+      display_on = true;
+      Serial.print(" + ON: ");
+      Serial.println(display_on);
+      s_context->display()->SetBrightness(DISPLAY_NORMAL);
+    }
     UpdateTimer();
+    return 0;
   }
 
   ///////////////////////// PostSampleState2
@@ -435,7 +477,7 @@ void WarmUpState::RotateDisplayMode() {
   void PostSample2State::enter_state() {
     SetStartTime();
     StartTimer();
-    s_context->display()->SetBrightness(254);
+    s_context->display()->SetBrightness(DISPLAY_NORMAL);
     s_context->fan()->TurnOff();
     s_context->button()->TurnOff();
   }
@@ -450,6 +492,8 @@ void WarmUpState::RotateDisplayMode() {
 
     if (e.event_type == mdlib::Event::BUTTON_CLICK)
       return next_state_;
+
+    return 0;
   }
 
   ///////////////// PowerSaverState
@@ -462,7 +506,7 @@ void WarmUpState::RotateDisplayMode() {
 
     s_context->led()->set_hsv(120, 1.0, 0.005);
     s_context->button()->SetBrightness(0.5);
-    s_context->display()->SetBrightness(200);
+    s_context->display()->SetBrightness(DISPLAY_DIM);
   }
 
   void PowerSaverState::leave_state() {
@@ -475,6 +519,8 @@ void WarmUpState::RotateDisplayMode() {
 
     if (e.event_type == mdlib::Event::TIMER_DONE)
       return timeout_next_state_;
+
+    return 0;
   }
 
   // LOOP
@@ -521,6 +567,8 @@ void WarmUpState::RotateDisplayMode() {
 	e.event_type == mdlib::Event::BUTTON_DOWN	||
 	e.event_type == mdlib::Event::BUTTON_UP	)
       return next_state_;
+
+    return 0;
   }
 
   State* SleepState::loop() {
