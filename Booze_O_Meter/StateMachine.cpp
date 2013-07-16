@@ -17,6 +17,8 @@ namespace mdlib {
 namespace BOM {
 StateContext* State::s_context = 0;
 
+  const float DISPLAY_NORMAL = 1.0;
+  const float DISPLAY_DIM = 0.8;
 void State::enter_state() {
   SetStartTime();
 }
@@ -33,7 +35,7 @@ void StartUpState::enter_state() {
   s_context->sensor()->TurnOn();
   s_context->button()->TurnOn();
   s_context->display()->Reset();
-  s_context->display()->SetBrightness(254);
+  s_context->display()->SetBrightness(DISPLAY_NORMAL);
   s_context->display()->set(8888);
   
 }
@@ -50,7 +52,23 @@ State* StartUpState::loop() {
   if (elapsed >= DURATION)
     return next_state_;
 
+  int b = (elapsed / 333) % 3;
+
+  switch (b) {
+  case 0:
+    s_context->button()->SetBrightness(0.33);
+    break;
+  case 1:
+    s_context->button()->SetBrightness(0.66);
+    break;
+  case 2:
+    s_context->button()->SetBrightness(1.00);
+    break;
+  }
+  
   int h = (int)(360.0f * (float)elapsed / (float)DURATION);
+  while (h > 360) h -= 360;
+  while (h < 0) h += 360;
   s_context->led()->set_hsv(h, 1.0f, 1.0f);
   return (State*)0;
 }
@@ -67,7 +85,7 @@ void WarmUpState::enter_state() {
   s_context->button()->SetBrightness(0.5);
   s_context->button()->TurnOff();
   s_context->display()->clear();
-  s_context->display()->SetBrightness(245);
+  s_context->display()->SetBrightness(DISPLAY_NORMAL);
   display_value_ = 0.0;
   pulse_start_ = millis();
 }
@@ -76,6 +94,7 @@ void WarmUpState::leave_state() {
   // the user may have double clicked the button and turned the fan on,
   // make sure it is off
   s_context->fan()->TurnOff();
+  Serial.println("Leaving WarmUpState");
 }
 
 State* WarmUpState::loop() {
@@ -88,37 +107,177 @@ State* WarmUpState::loop() {
     elapsed = 0;
   }
 
-  float v;
+  //   0 - Red
+  //  60 - Yellow
+  // 120 - Green
+  // 180 - Turquoise
+  // 240 - Blue
+  // 300 - Magenta
 
+  int color = 60; // blue
+  switch(display_mode_) {
+  case GRAPHIC:
+    color = 240; // blue
+    break;
+  case ALCOHOL_STDDEV:
+  case ALCOHOL_VALUE:
+    color = 300; // violet
+    break;
+  case THERMISTOR_STDDEV:
+  case THERMISTOR_VALUE:
+    color = 180; // turquoise
+    break;
+  }
+
+  float v;
   if (elapsed < PULSE_TIME) {
     v = 1.0 - (float)elapsed / (float)PULSE_TIME;
     v *= v;
-    s_context->led()->set_hsv(240, 1.0, v);
+    s_context->led()->set_hsv(color, 1.0, v);
   }
   else {
-    s_context->led()->set_hsv(240, 1.0, 0.005);
+    s_context->led()->set_hsv(color, 1.0, 0.005);
   }
 
-  v = s_context->sensor()->DataStdDev();
-  if (v != display_value_) {
-    display_value_ = v;
-    s_context->display()->set(display_value_, 2);
+  switch(display_mode_) {
+  case GRAPHIC:
+    UpdateGraphicDisplay();
+    break;
+  case ALCOHOL_STDDEV:
+    v = s_context->sensor()->DataStdDev();
+    if (v != display_value_) {
+      display_value_ = v;
+      s_context->display()->set(display_value_, 2);
+    }
+    break;
+  case THERMISTOR_STDDEV:
+    v = s_context->sensor()->TempStdDev();
+    if (v != display_value_) {
+      display_value_ = v;
+      s_context->display()->set(display_value_, 2);
+    }
+    break;
+  case ALCOHOL_VALUE:
+    v = s_context->sensor()->RawAlcoholValue();
+    if (v != display_value_) {
+      display_value_ = v;
+      s_context->display()->set((int)display_value_);
+    }
+    break;
+  case THERMISTOR_VALUE:
+    v = s_context->sensor()->RawThermistor();
+    if (v != display_value_) {
+      display_value_ = v;
+      s_context->display()->set((int)display_value_);
+    }
+    break;
   }
 
   if (s_context->sensor()->IsReady())
-   return next_state_;
+    return next_state_;
 
   return (State*)0;
 }
-  State* WarmUpState::handle_event(mdlib::Event e) {
-    if (e.event_type == mdlib::Event::BUTTON_DOUBLE_CLICK) {
-      if (s_context->fan()->IsOn())
-	s_context->fan()->TurnOff();
-      else
-	s_context->fan()->TurnOn();
-    }
-    return 0;
+
+State* WarmUpState::handle_event(mdlib::Event e) {
+  if (e.event_type == mdlib::Event::BUTTON_DOUBLE_CLICK) {
+    if (s_context->fan()->IsOn())
+      s_context->fan()->TurnOff();
+    else
+      s_context->fan()->TurnOn();
   }
+  else if (e.event_type == mdlib::Event::BUTTON_LONG_CLICK) {
+    RotateDisplayMode();
+  }
+  return 0;
+}
+
+void WarmUpState::UpdateGraphicDisplay() {
+  // A = 0x01 (TOP)
+  // G = 0x40 (MIDDLE)
+  // D = 0x08 (BOTTOM)
+  // C + F = 0x24 (NOT READY)
+  // A + G + D = 0x49 (UNSTABLE)
+  int temperature_trend = s_context->sensor()->GetTemperatureTrend();
+  //  if (temperature_trend != temperature_trend_) {
+  {
+    temperature_trend_ = temperature_trend;
+    byte mask;
+    switch(temperature_trend_) {
+    case BoozeSensor::DATA_NOT_READY:
+      mask = 0x24;
+      break;
+    case BoozeSensor::DATA_RISING:
+      mask = 0x01;
+      break;
+    case BoozeSensor::DATA_STABLE:
+      mask = 0x40;
+      break;
+    case BoozeSensor::DATA_FALLING:
+      mask = 0x08;
+      break;
+    case BoozeSensor::DATA_UNSTABLE:
+      mask = 0x49;
+      break;
+    }
+    s_context->display()->SetDigitSegments(0, mask);
+    s_context->display()->SetDigitSegments(1, mask);
+  }
+
+  int alcohol_trend = s_context->sensor()->GetAlcoholTrend();
+  //  if (alcohol_trend != alcohol_trend_) {
+  {
+    alcohol_trend_ = alcohol_trend;
+    byte mask;
+    switch(alcohol_trend_) {
+    case BoozeSensor::DATA_NOT_READY:
+      mask = 0x24;
+      break;
+    case BoozeSensor::DATA_RISING:
+      mask = 0x01;
+      break;
+    case BoozeSensor::DATA_STABLE:
+      mask = 0x40;
+      break;
+    case BoozeSensor::DATA_FALLING:
+      mask = 0x08;
+      break;
+    case BoozeSensor::DATA_UNSTABLE:
+      mask = 0x49;
+      break;
+    }
+    s_context->display()->SetDigitSegments(2, mask);
+    s_context->display()->SetDigitSegments(3, mask);
+  }
+}
+  
+void WarmUpState::RotateDisplayMode() {
+  display_value_ = -1; // force display update
+  s_context->display()->clear();
+  switch(display_mode_) {
+  case GRAPHIC:
+    display_mode_ = ALCOHOL_STDDEV;
+    Serial.print("ALCOHOL_STDDEV");
+    break;
+  case ALCOHOL_STDDEV:
+    display_mode_ = ALCOHOL_VALUE;
+    Serial.print("ALCOHOL_VALUE");
+    break;
+  case ALCOHOL_VALUE:
+    display_mode_ = THERMISTOR_STDDEV;
+    Serial.print("THERMISTOR_STDDEV");
+    break;
+  case THERMISTOR_STDDEV:
+    display_mode_ = THERMISTOR_VALUE;
+    Serial.print("THERMISTOR_VALUE");
+    break;
+  case THERMISTOR_VALUE:
+    display_mode_ = GRAPHIC;
+    Serial.print("GRAPHIC");
+    break;
+  }
+}
+
 /////////////////// ReadyState
 
   void ReadyState::enter_state() {
@@ -130,7 +289,7 @@ State* WarmUpState::loop() {
     s_context->button()->SetBrightness(0.5);
     s_context->button()->TurnOff();
     s_context->display()->clear();
-    s_context->display()->SetBrightness(250);
+    s_context->display()->SetBrightness(DISPLAY_NORMAL);
     s_context->fan()->TurnOff();
     s_context->led()->set_hsv(120, 1.0, 0.1);
   }
@@ -195,10 +354,10 @@ State* WarmUpState::loop() {
   void SamplingState::enter_state() {
     SetStartTime();
     StartTimer();
-    hue = 0;
+    hue = 120;
     s_context->display()->clear();
-    s_context->display()->set(hue);
-    s_context->display()->SetBrightness(254);
+    s_context->display()->set(1.0);
+    s_context->display()->SetBrightness(DISPLAY_NORMAL);
     s_context->led()->set_hsv(hue, 1.0f,  1.0f);
     s_context->sensor()->StartRecording();
 
@@ -266,9 +425,11 @@ State* WarmUpState::loop() {
   ///////////////////////// PostSampleState
 
   void PostSampleState::enter_state() {
+    Serial.print("ENTERING ");
+    Serial.println(name());
     SetStartTime();
     StartTimer();
-    s_context->display()->SetBrightness(254);
+    s_context->display()->SetBrightness(DISPLAY_NORMAL);
     s_context->fan()->TurnOn();
     s_context->button()->TurnOff();
   }
@@ -283,11 +444,32 @@ State* WarmUpState::loop() {
 
     if (e.event_type == mdlib::Event::BUTTON_CLICK)
       return next_state_;
+
+    return 0;
   }
 
   State* PostSampleState::loop() {
     // blink the display
+    unsigned long elapsed = millis() - start_time_;
+    static bool display_on = false;
+    if (elapsed < 2000) {
+      bool on = ((elapsed / 200) % 2) == 0;
+
+      if (on != display_on) {
+	display_on = on;
+	Serial.print(" - ON: ");
+	Serial.println(on);
+	s_context->display()->SetBrightness( on ? DISPLAY_NORMAL : 0.0);
+      }
+    }
+    else if (!display_on) {
+      display_on = true;
+      Serial.print(" + ON: ");
+      Serial.println(display_on);
+      s_context->display()->SetBrightness(DISPLAY_NORMAL);
+    }
     UpdateTimer();
+    return 0;
   }
 
   ///////////////////////// PostSampleState2
@@ -295,7 +477,7 @@ State* WarmUpState::loop() {
   void PostSample2State::enter_state() {
     SetStartTime();
     StartTimer();
-    s_context->display()->SetBrightness(254);
+    s_context->display()->SetBrightness(DISPLAY_NORMAL);
     s_context->fan()->TurnOff();
     s_context->button()->TurnOff();
   }
@@ -310,6 +492,8 @@ State* WarmUpState::loop() {
 
     if (e.event_type == mdlib::Event::BUTTON_CLICK)
       return next_state_;
+
+    return 0;
   }
 
   ///////////////// PowerSaverState
@@ -322,7 +506,7 @@ State* WarmUpState::loop() {
 
     s_context->led()->set_hsv(120, 1.0, 0.005);
     s_context->button()->SetBrightness(0.5);
-    s_context->display()->SetBrightness(200);
+    s_context->display()->SetBrightness(DISPLAY_DIM);
   }
 
   void PowerSaverState::leave_state() {
@@ -335,6 +519,8 @@ State* WarmUpState::loop() {
 
     if (e.event_type == mdlib::Event::TIMER_DONE)
       return timeout_next_state_;
+
+    return 0;
   }
 
   // LOOP
@@ -381,6 +567,8 @@ State* WarmUpState::loop() {
 	e.event_type == mdlib::Event::BUTTON_DOWN	||
 	e.event_type == mdlib::Event::BUTTON_UP	)
       return next_state_;
+
+    return 0;
   }
 
   State* SleepState::loop() {
