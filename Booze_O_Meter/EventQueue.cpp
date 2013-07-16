@@ -3,7 +3,7 @@
 #include "Queue.h"
 
 namespace mdlib {
-  const int EVENT_QUEUE_LENGTH = 50;
+  const int EVENT_QUEUE_LENGTH = 10;
   static Event EVENT_Q_DATA[EVENT_QUEUE_LENGTH];
   
   static Queue<Event> EventQueue(EVENT_Q_DATA, EVENT_QUEUE_LENGTH);
@@ -38,19 +38,23 @@ namespace mdlib {
     }
   }
   void PostEvent(Event e) {
+#if 0
     Serial.print("--POST: e: ");
     Serial.print(event_name(e));
     Serial.print(", id: ");
     Serial.println(e.source_id);
+#endif
     EventQueue.AddToBack(e);
   }
 
   Event HandleEvent() {
     Event e = EventQueue.TakeFromFront();
+#if 0
     Serial.print("HANDLE: e: ");
     Serial.print(event_name(e));
     Serial.print(", id: ");
     Serial.println(e.source_id);
+#endif
     return e;
   }
 }
