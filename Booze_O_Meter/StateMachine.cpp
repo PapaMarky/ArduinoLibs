@@ -18,7 +18,7 @@ namespace BOM {
 StateContext* State::s_context = 0;
 
   const float DISPLAY_NORMAL = 1.0;
-  const float DISPLAY_DIM = 0.8;
+  const float DISPLAY_DIM = 0.83;
 void State::enter_state() {
   SetStartTime();
 }
@@ -36,8 +36,10 @@ void StartUpState::enter_state() {
   s_context->button()->TurnOn();
   s_context->display()->Reset();
   s_context->display()->SetBrightness(DISPLAY_NORMAL);
-  s_context->display()->set(8888);
-  
+  //  s_context->display()->set(8888);
+
+  for(int i = 0; i < 5; i++)
+    segments[i] = 0x00;
 }
 
 void StartUpState::leave_state() {
@@ -48,7 +50,38 @@ void StartUpState::leave_state() {
 
 State* StartUpState::loop() {
   unsigned long elapsed = millis() - start_time_;
+  static int segments = 0;
+  static int gap = 0;
+  static bool bright = false;
+  if (segments < 38) {
+    if (gap == 0) {
+      int n = random(0,38);
+      bool found = TryToSetSegment(n);
+      int i = 1;
+      while (!found && i < 38) {
+	if (n - i >= 0)
+	  if(found = TryToSetSegment(n - i))
+	    break;
+	if (n + i < 38)
+	  found = TryToSetSegment(n + i);
 
+	i++;
+      }
+      if(found) {
+	segments++;
+	if (segments == 38) {
+	  s_context->display()->SetBrightness(DISPLAY_NORMAL);
+	}
+	else if (segments % 5 == 0) {
+	  s_context->display()->SetBrightness(bright ? DISPLAY_NORMAL : DISPLAY_DIM);
+	  bright = !bright;
+	}
+      }
+    }
+    gap++;
+    if (gap > 12)
+      gap = 0;
+  }
   if (elapsed >= DURATION)
     return next_state_;
 
@@ -77,6 +110,36 @@ State* StartUpState::handle_event(mdlib::Event e) {
   return (State*)0;
 }
 
+static byte SEGMENT_COMMAND[5] = {0x7B, 0x7C, 0x7D, 0x7E, 0x77};
+
+bool StartUpState::TryToSetSegment(int n) {
+  int b = n / 8;
+  int s = n % 8;
+  uint8_t bit = 0x01 << s;
+
+  Serial.print("TryToSetSegment(");
+  Serial.print(n);
+  Serial.print(") b: ");
+  Serial.print(b);
+  Serial.print(", s: ");
+  Serial.print(s);
+  Serial.print(", bit: ");
+  Serial.print(bit, BIN);
+  Serial.print(", cmd: 0x");
+  Serial.print(SEGMENT_COMMAND[b], HEX);
+  Serial.print(", ");
+  Serial.print(segments[b] & bit ? "FALSE" : "TRUE");
+  Serial.println("");
+
+  if (segments[b] & bit)
+    return false;
+
+  segments[b] |= bit;
+  s_context->display()->SetSegment(SEGMENT_COMMAND[b], segments[b]);
+
+  return true;
+}
+  
 /////// WarmUpState
 void WarmUpState::enter_state() {
   SetStartTime();

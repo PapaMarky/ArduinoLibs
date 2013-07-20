@@ -71,6 +71,16 @@ class StartUpState : public State {
   virtual const char* name() const { return "StartUpState"; }
  private:
   static const unsigned int DURATION = 8000;
+  // 0 : 0x7B : digit 1 segments ( 0 -  7)
+  // 1 : 0x7C : digit 2 segments ( 8 - 15)
+  // 2 : 0x7D : digit 3 segments (16 - 23)
+  // 3 : 0x7E : digit 4 segments (24 - 31)
+  // 4 : 0x77 : decimal point segments (32 - 37)
+  uint8_t segments[5];
+
+  // 'n' is between 0 and 37 inclusive
+  // returns 'true' if segment is set successfully
+  bool TryToSetSegment(int n);
 };
 
 class WarmUpState : public State {

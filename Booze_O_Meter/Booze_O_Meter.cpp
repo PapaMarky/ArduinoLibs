@@ -66,7 +66,7 @@ void Booze_O_Meter::update() {
 
   // Manage Events
   while (mdlib::CountEvents() > 0) {
-    Serial.println("HANDLING EVENT");
+    //Serial.println("HANDLING EVENT");
     mdlib::Event e = mdlib::HandleEvent();
 
     State* next_state = state_->handle_event(e);
