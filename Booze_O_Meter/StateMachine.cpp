@@ -141,8 +141,10 @@ bool StartUpState::TryToSetSegment(int n) {
 }
   
 /////// WarmUpState
+  const float BASE_STABLE_SIZE = 0.8;
 void WarmUpState::enter_state() {
   SetStartTime();
+  s_context->sensor()->SetDataStableSize(BASE_STABLE_SIZE);
   s_context->sensor()->TurnOn();
   s_context->fan()->TurnOff();
   s_context->button()->SetBrightness(0.5);
@@ -157,7 +159,8 @@ void WarmUpState::leave_state() {
   // the user may have double clicked the button and turned the fan on,
   // make sure it is off
   s_context->fan()->TurnOff();
-  Serial.println("Leaving WarmUpState");
+  SetDataStableSize(BASE_STABLE_SIZE);
+  //  Serial.println("Leaving WarmUpState");
 }
 
 State* WarmUpState::loop() {
@@ -236,12 +239,19 @@ State* WarmUpState::loop() {
     break;
   }
 
-  if (s_context->sensor()->IsReady())
+  if (s_context->sensor()->IsReady() || elapsed > (5 * 60 * 1000))
     return next_state_;
 
+  if (data_stable_size_ == BASE_STABLE_SIZE && elapsed > (3 * 60 * 1000)) {
+    SetDataStableSize(2 * BASE_STABLE_SIZE);
+  }
   return (State*)0;
 }
 
+void WarmUpState::SetDataStableSize(float s) {
+  data_stable_size_ = s;
+  s_context->sensor()->SetDataStableSize(s);
+}
 State* WarmUpState::handle_event(mdlib::Event e) {
   if (e.event_type == mdlib::Event::BUTTON_DOUBLE_CLICK) {
     if (s_context->fan()->IsOn())

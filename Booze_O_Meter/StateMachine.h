@@ -117,6 +117,9 @@ class WarmUpState : public State {
   float display_value_;
   
   unsigned long pulse_start_;
+
+  void SetDataStableSize(float s);
+  double data_stable_size_;
 };
 
 class ReadyState : public TimedState {
